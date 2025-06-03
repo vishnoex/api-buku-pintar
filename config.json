@@ -1,0 +1,16 @@
+{
+    "firebase": {
+        "credentials_file": "./firebase-credentials.json"
+    },
+    "database": {
+        "host": "mysql-8",
+        "port": "3306",
+        "user": "root",
+        "password": "bukanpassword",
+        "name": "bukupintar",
+        "params": "parseTime=true"
+    },
+    "app": {
+        "port": "8080"
+    }
+} 

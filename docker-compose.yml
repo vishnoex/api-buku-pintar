@@ -1,0 +1,20 @@
+services:
+  app:
+    container_name: buku-pintar
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - TZ=Asia/Jakarta
+    volumes:
+      - ./config.json:/app/config.json
+      - ./firebase-credentials.json:/app/firebase-credentials.json
+    networks:
+      - mysql-8_app-network
+
+networks:
+  mysql-8_app-network:
+    # driver: bridge 
+    external: true
