@@ -3,6 +3,14 @@
         "credentials_file": "./firebase-credentials.json"
     },
     "database": {
+        "host": "ls-87b5e4d7f32bee404e2bdf14c4ca48c14bc29ca3.cja84syy4pv6.ap-southeast-1.rds.amazonaws.com",
+        "port": "3306",
+        "user": "dbmasteruser",
+        "password": "6z`j+U9G4qN+gGfc[a_*c_*;JEXAFr)`",
+        "name": "bukupintar",
+        "params": "parseTime=true"
+    },
+    "database_local": {
         "host": "mysql-8",
         "port": "3306",
         "user": "root",
