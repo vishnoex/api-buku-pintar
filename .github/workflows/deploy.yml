@@ -1,0 +1,150 @@
+name: Deploy to AWS Lightsail
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ap-southeast-1
+  CONTAINER_SERVICE_NAME: buku-pintar-api
+  CONTAINER_NAME: buku-pintar
+  CONTAINER_PORT: 8080
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Verify AWS credentials
+      run: |
+        aws sts get-caller-identity
+        aws lightsail get-instances --query 'instances[0].name' --output text
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Create ECR repository if not exists
+      run: |
+        if ! aws ecr describe-repositories --repository-names ${{ env.ECR_REPOSITORY }} 2>/dev/null; then
+          echo "Creating ECR repository..."
+          aws ecr create-repository --repository-name ${{ env.ECR_REPOSITORY }}
+        else
+          echo "ECR repository already exists"
+        fi
+
+    - name: Build, tag, and push image to Amazon ECR
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        echo "Building and pushing Docker image..."
+        # Build the image
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        
+        # Verify ECR login
+        echo "Verifying ECR login..."
+        aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+        
+        # Tag the image
+        docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+        
+        # Push with retry logic
+        echo "Pushing image to ECR..."
+        max_attempts=3
+        attempt=1
+        while [ $attempt -le $max_attempts ]; do
+          echo "Push attempt $attempt of $max_attempts"
+          if docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG; then
+            echo "Successfully pushed image with tag: $IMAGE_TAG"
+            if docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest; then
+              echo "Successfully pushed latest tag"
+              break
+            else
+              echo "Failed to push latest tag"
+            fi
+          else
+            echo "Failed to push image with tag: $IMAGE_TAG"
+            if [ $attempt -eq $max_attempts ]; then
+              echo "All push attempts failed"
+              exit 1
+            fi
+            echo "Retrying in 5 seconds..."
+            sleep 5
+          fi
+          attempt=$((attempt + 1))
+        done
+
+    - name: Get Instance IP
+      id: get-ip
+      run: |
+        INSTANCE_IP=$(aws lightsail get-instance --instance-name ${{ env.LIGHTSAIL_INSTANCE }} --query 'instance.publicIpAddress' --output text)
+        echo "instance_ip=$INSTANCE_IP" >> $GITHUB_OUTPUT
+        echo "Retrieved instance IP: $INSTANCE_IP"
+
+    - name: Deploy to Lightsail Instance
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ steps.get-ip.outputs.instance_ip }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
+        port: ${{ secrets.PORT }}
+        command_timeout: 30m
+        script: |
+          # Create deployment script
+          cat > deploy.sh << 'EOF'
+          #!/bin/bash
+          set -e
+          
+          # Configure AWS credentials
+          echo "Configuring AWS credentials..."
+          mkdir -p ~/.aws
+          cat > ~/.aws/credentials << 'CREDENTIALS'
+          [default]
+          aws_access_key_id=${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws_secret_access_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          region=${{ env.AWS_REGION }}
+          CREDENTIALS
+          
+          # Set proper permissions
+          chmod 600 ~/.aws/credentials
+          
+          echo "Logging into ECR..."
+          aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+          
+          echo "Pulling latest image..."
+          docker pull ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          
+          echo "Stopping existing container..."
+          docker stop buku-pintar-api || true
+          docker rm buku-pintar-api || true
+          
+          echo "Starting new container..."
+          docker run -d \
+            --name buku-pintar-api \
+            -p ${{ env.CONTAINER_PORT }}:${{ env.CONTAINER_PORT }} \
+            --restart unless-stopped \
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
+          
+          echo "Deployment completed successfully"
+          
+          # Clean up AWS credentials
+          rm -rf ~/.aws
+          EOF
+          
+          # Make the script executable
+          chmod +x deploy.sh
+          
+          sudo ./deploy.sh
