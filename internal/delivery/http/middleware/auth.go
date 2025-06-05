@@ -9,6 +9,14 @@ import (
 	"firebase.google.com/go/v4/auth"
 )
 
+// ClaimKey represents a type for Firebase token claim keys
+type ClaimKey string
+
+const (
+	EmailClaim ClaimKey = "email"
+	NameClaim  ClaimKey = "name"
+)
+
 type AuthMiddleware struct {
 	firebaseAuth *auth.Client
 }
@@ -45,8 +53,8 @@ func (m *AuthMiddleware) Authenticate(next http.Handler) http.Handler {
 		// Create user context
 		user := &entity.User{
 			ID:     token.UID, // Use Firebase UID as the user ID
-			Email:  token.Claims["email"].(string),
-			Name:   token.Claims["name"].(string),
+			Email:  token.Claims[string(EmailClaim)].(string),
+			Name:   token.Claims[string(NameClaim)].(string),
 			Role:   entity.RoleReader, // Default role
 			Status: entity.StatusActive, // Default status
 		}
