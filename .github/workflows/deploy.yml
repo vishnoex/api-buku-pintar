@@ -45,6 +45,17 @@ jobs:
           echo "ECR repository already exists"
         fi
 
+    - name: Write Firebase credentials
+      run: |
+        echo "Writing Firebase credentials..."
+        echo '${{ secrets.FIREBASE_CREDENTIAL }}' > firebase-credentials.json
+        # Verify the file was created and has content
+        if [ ! -s firebase-credentials.json ]; then
+          echo "Error: Firebase credentials file is empty or was not created"
+          exit 1
+        fi
+        echo "Firebase credentials written successfully"
+
     - name: Build, tag, and push image to Amazon ECR
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
