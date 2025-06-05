@@ -17,6 +17,13 @@ const (
 	NameClaim  ClaimKey = "name"
 )
 
+// ContextKey represents a type for context keys
+type ContextKey string
+
+const (
+	UserContextKey ContextKey = "user"
+)
+
 type AuthMiddleware struct {
 	firebaseAuth *auth.Client
 }
@@ -60,14 +67,14 @@ func (m *AuthMiddleware) Authenticate(next http.Handler) http.Handler {
 		}
 
 		// Add user to context
-		ctx := context.WithValue(r.Context(), "user", user)
+		ctx := context.WithValue(r.Context(), UserContextKey, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
 // GetUserFromContext retrieves the user from the context
 func GetUserFromContext(ctx context.Context) (*entity.User, error) {
-	user, ok := ctx.Value("user").(*entity.User)
+	user, ok := ctx.Value(UserContextKey).(*entity.User)
 	if !ok {
 		return nil, nil
 	}
