@@ -32,7 +32,9 @@ COPY --from=builder /app/main .
 
 # Copy config files
 COPY config.json .
-COPY firebase-credentials.json .
+
+# Copy firebase credentials if it exists (will be created during deployment)
+COPY firebase-credentials.json* ./
 
 # Expose port
 EXPOSE 8080

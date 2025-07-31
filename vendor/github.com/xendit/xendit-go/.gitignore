@@ -11,23 +11,17 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
-# Go workspace file
-go.work
+# Dependency directories (remove the comment below to include it)
+# vendor/
+bin/
 
-# IDE specific files
-.idea/
-.vscode/
-*.swp
-*.swo
+# IDE configuration files
+.idea
 
 # Environment files
 .env
-.env.*
 
-# Firebase credentials
-firebase-credentials.json
-*.json.key
-
-# OS specific files
-.DS_Store
-Thumbs.db 
+*.coverprofile
+*.cov
+*.vscode
+DS_Store
