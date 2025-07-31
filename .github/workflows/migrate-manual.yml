@@ -1,0 +1,64 @@
+name: Manual Database Migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      migration_command:
+        description: 'Migration command (up, down, force, version, etc.)'
+        required: true
+        default: 'up'
+        type: choice
+        options:
+          - up
+          - down
+          - force
+          - version
+          - drop
+          - create
+      migration_version:
+        description: 'Migration version (for force, down commands)'
+        required: false
+        type: string
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Install migrate CLI
+        run: |
+          curl -L https://github.com/golang-migrate/migrate/releases/download/v4.16.2/migrate.linux-amd64.tar.gz | tar xvz
+          sudo mv migrate /usr/local/bin/
+
+      - name: Run migration command
+        env:
+          DB_URL: ${{ secrets.DB_URL }}
+        run: |
+          echo "Running migration command: ${{ github.event.inputs.migration_command }}"
+          
+          if [ "${{ github.event.inputs.migration_command }}" = "force" ] || [ "${{ github.event.inputs.migration_command }}" = "down" ]; then
+            if [ -z "${{ github.event.inputs.migration_version }}" ]; then
+              echo "Error: Version is required for force and down commands"
+              exit 1
+            fi
+            migrate -path ./migrations -database "$DB_URL" ${{ github.event.inputs.migration_command }} ${{ github.event.inputs.migration_version }}
+          else
+            migrate -path ./migrations -database "$DB_URL" ${{ github.event.inputs.migration_command }}
+          fi
+          
+          echo "Migration command completed successfully!"
+
+      - name: Show current migration status
+        env:
+          DB_URL: ${{ secrets.DB_URL }}
+        run: |
+          echo "Current migration status:"
+          migrate -path ./migrations -database "$DB_URL" version 
