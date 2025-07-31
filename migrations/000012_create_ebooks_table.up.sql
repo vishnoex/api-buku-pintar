@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS `ebooks` (
+  `id` VARCHAR(36) PRIMARY KEY,
+  `author_id` VARCHAR(36) NOT NULL,
+  `title` VARCHAR(255) NOT NULL,
+  `synopsis` TEXT NOT NULL,
+  `slug` VARCHAR(255) NOT NULL,
+  `cover_image` VARCHAR(255) NOT NULL,
+  `category_id` VARCHAR(36) NOT NULL,
+  `content_status_id` VARCHAR(36) NOT NULL,
+  `price` INT NOT NULL,
+  `language` VARCHAR(255) NOT NULL,
+  `duration` INT NOT NULL,
+  `filesize` BIGINT NOT NULL,
+  `format` ENUM('pdf', 'epub', 'mobi') NOT NULL DEFAULT('pdf'),
+  `page_count` SMALLINT NOT NULL,
+  `preview_page` SMALLINT NOT NULL,
+  `url` VARCHAR(255) NOT NULL,
+  `published_at` TIMESTAMP,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`id`) REFERENCES `authors`(`id`),
+  FOREIGN KEY (`category_id`) REFERENCES `categories`(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

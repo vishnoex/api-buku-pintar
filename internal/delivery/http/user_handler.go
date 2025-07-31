@@ -4,6 +4,7 @@ import (
 	"buku-pintar/internal/domain/entity"
 	"buku-pintar/internal/usecase"
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -17,25 +18,42 @@ func NewUserHandler(userUsecase usecase.UserUsecase) *UserHandler {
 	}
 }
 
+type RegisterRequest struct {
+	User    entity.User `json:"user"`
+	IDToken string      `json:"id_token"`
+}
+
 func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	var user entity.User
-	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+	var req RegisterRequest
+	fmt.Println("=== Validatin Request Body ===")
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if err := h.userUsecase.Register(r.Context(), &user); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+	// If ID token is provided, use Firebase registration
+	if req.IDToken != "" {
+		fmt.Println("=== Register with firebase ===")
+		if err := h.userUsecase.RegisterWithFirebase(r.Context(), &req.User, req.IDToken); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		// Otherwise use regular registration
+		fmt.Println("=== Register with regular method ===")
+		if err := h.userUsecase.Register(r.Context(), &req.User); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(user); err != nil {
+	if err := json.NewEncoder(w).Encode(req.User); err != nil {
 		http.Error(w, "Error encoding response", http.StatusInternalServerError)
 		return
 	}

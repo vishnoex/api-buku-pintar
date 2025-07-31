@@ -7,6 +7,7 @@ import (
 
 type UserUsecase interface {
 	Register(ctx context.Context, user *entity.User) error
+	RegisterWithFirebase(ctx context.Context, user *entity.User, idToken string) error
 	GetUserByID(ctx context.Context, id string) (*entity.User, error)
 	GetUserByEmail(ctx context.Context, email string) (*entity.User, error)
 	UpdateUser(ctx context.Context, user *entity.User) error

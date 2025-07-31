@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS `ebook_discounts` (
+  `id` VARCHAR(36) PRIMARY KEY,
+  `ebook_id` VARCHAR(36) NOT NULL,
+  `discount_price` INT NOT NULL DEFAULT 0,
+  `started_at` TIMESTAMP NOT NULL,
+  `ended_at` TIMESTAMP NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX `idx_ebook_id` (`ebook_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

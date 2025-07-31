@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS `inspirations` (
+  `id` VARCHAR(36) PRIMARY KEY,
+  `author_id` VARCHAR(36) NOT NULL,
+  `title` VARCHAR(255) NOT NULL,
+  `content` TEXT NOT NULL,
+  `slug` VARCHAR(255) NOT NULL,
+  `excerpt` VARCHAR(255) NOT NULL,
+  `cover_image` VARCHAR(255) NOT NULL,
+  `category_id` VARCHAR(36) NOT NULL,
+  `content_status_id` VARCHAR(36) NOT NULL,
+  `reading_time` SMALLINT NOT NULL,
+  `published_at` TIMESTAMP,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`author_id`) REFERENCES `authors`(`id`),
+  FOREIGN KEY (`category_id`) REFERENCES `categories`(`id`),
+  INDEX `idx_author_id` (`author_id`),
+  INDEX `idx_slug` (`slug`),
+  INDEX `idx_category_id` (`category_id`),
+  INDEX `idx_content_status_id` (`content_status_id`),
+  INDEX `idx_author_id_status` (`author_id`, `content_status_id`),
+  INDEX `idx_slug_status` (`slug`, `content_status_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

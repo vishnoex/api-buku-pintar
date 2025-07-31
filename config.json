@@ -2,6 +2,11 @@
     "firebase": {
         "credentials_file": "./firebase-credentials.json"
     },
+    "payment": {
+        "xendit": {
+            "key": "xnd_development_ptfpMQTwqG7Vapllu2rV57HP84kQOhsY8X5PXgDf4UsT5AlJ6kWRruI0eaRJ19rQ"
+        }
+    },
     "database": {
         "host": "ls-87b5e4d7f32bee404e2bdf14c4ca48c14bc29ca3.cja84syy4pv6.ap-southeast-1.rds.amazonaws.com",
         "port": "3306",
@@ -19,6 +24,7 @@
         "params": "parseTime=true"
     },
     "app": {
-        "port": "8080"
+        "port": "8080",
+        "environment": "local"
     }
 } 

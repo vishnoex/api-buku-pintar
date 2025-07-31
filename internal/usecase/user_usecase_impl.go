@@ -9,15 +9,15 @@ import (
 )
 
 type userUsecase struct {
-	userRepo repository.UserRepository
-	userSvc  service.UserService
+	userRepo     repository.UserRepository
+	userService  service.UserService
 }
 
 // NewUserUsecase creates a new instance of UserUsecase
-func NewUserUsecase(userRepo repository.UserRepository, userSvc service.UserService) UserUsecase {
+func NewUserUsecase(userRepo repository.UserRepository, userService service.UserService) UserUsecase {
 	return &userUsecase{
-		userRepo: userRepo,
-		userSvc:  userSvc,
+		userRepo:    userRepo,
+		userService: userService,
 	}
 }
 
@@ -32,15 +32,19 @@ func (u *userUsecase) Register(ctx context.Context, user *entity.User) error {
 	}
 
 	// Use service for business logic
-	return u.userSvc.Register(ctx, user)
+	return u.userService.Register(ctx, user)
+}
+
+func (u *userUsecase) RegisterWithFirebase(ctx context.Context, user *entity.User, idToken string) error {
+	return u.userService.RegisterWithFirebase(ctx, user, idToken)
 }
 
 func (u *userUsecase) GetUserByID(ctx context.Context, id string) (*entity.User, error) {
-	return u.userSvc.GetUserByID(ctx, id)
+	return u.userService.GetUserByID(ctx, id)
 }
 
 func (u *userUsecase) GetUserByEmail(ctx context.Context, email string) (*entity.User, error) {
-	return u.userSvc.GetUserByEmail(ctx, email)
+	return u.userService.GetUserByEmail(ctx, email)
 }
 
 func (u *userUsecase) UpdateUser(ctx context.Context, user *entity.User) error {
@@ -53,7 +57,7 @@ func (u *userUsecase) UpdateUser(ctx context.Context, user *entity.User) error {
 		return errors.New("user not found")
 	}
 
-	return u.userSvc.UpdateUser(ctx, user)
+	return u.userService.UpdateUser(ctx, user)
 }
 
 func (u *userUsecase) DeleteUser(ctx context.Context, id string) error {
@@ -66,5 +70,5 @@ func (u *userUsecase) DeleteUser(ctx context.Context, id string) error {
 		return errors.New("user not found")
 	}
 
-	return u.userSvc.DeleteUser(ctx, id)
+	return u.userService.DeleteUser(ctx, id)
 } 

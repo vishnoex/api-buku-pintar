@@ -20,6 +20,13 @@ const (
 	StatusSuspended UserStatus = "suspended"
 )
 
+type Provider string
+
+const (
+	EmailPassword Provider = "email-password"
+	Google		  Provider = "google"
+)
+
 // User represents a user in the system
 type User struct {
 	ID        string     `json:"id"`
@@ -27,6 +34,7 @@ type User struct {
 	Email     string     `json:"email"`
 	Password  string     `json:"-"`
 	Role      UserRole   `json:"role"`
+	Provider  Provider   `json:"provider"`
 	Avatar    string     `json:"avatar"`
 	Status    UserStatus `json:"status"`
 	CreatedAt time.Time  `json:"created_at"`

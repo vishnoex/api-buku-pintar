@@ -1,0 +1,13 @@
+CREATE TABLE IF NOT EXISTS `banners` (
+  `id` VARCHAR(36) PRIMARY KEY,
+  `title` VARCHAR(255) NOT NULL,
+  `image_url` VARCHAR(255) NOT NULL,
+  `link` VARCHAR(255),
+  `cta_label` VARCHAR(255),
+  `background_color` VARCHAR(255),
+  `is_active` BOOLEAN NOT NULL DEFAULT TRUE,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX `idx_active` (`is_active`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

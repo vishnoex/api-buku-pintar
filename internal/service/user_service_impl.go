@@ -5,17 +5,22 @@ import (
 	"buku-pintar/internal/domain/repository"
 	"buku-pintar/internal/domain/service"
 	"context"
+	"errors"
+
+	"firebase.google.com/go/v4/auth"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type userService struct {
-	userRepo repository.UserRepository
+	userRepo     repository.UserRepository
+	firebaseAuth *auth.Client
 }
 
 // NewUserService creates a new instance of UserService
-func NewUserService(userRepo repository.UserRepository) service.UserService {
+func NewUserService(userRepo repository.UserRepository, firebaseAuth *auth.Client) service.UserService {
 	return &userService{
-		userRepo: userRepo,
+		userRepo:     userRepo,
+		firebaseAuth: firebaseAuth,
 	}
 }
 
@@ -27,6 +32,37 @@ func (s *userService) Register(ctx context.Context, user *entity.User) error {
 	}
 	user.Password = string(hashedPassword)
 
+	return s.userRepo.Create(ctx, user)
+}
+
+func (s *userService) RegisterWithFirebase(ctx context.Context, user *entity.User, idToken string) error {
+	// Verify the ID token
+	token, err := s.firebaseAuth.VerifyIDToken(ctx, idToken)
+	if err != nil {
+		return errors.New("invalid ID token")
+	}
+
+	// Check if user already exists
+	existingUser, err := s.userRepo.GetByEmail(ctx, user.Email)
+	if err != nil {
+		return err
+	}
+	if existingUser != nil {
+		return errors.New("user already exists")
+	}
+
+	// Set user ID from Firebase UID
+	user.ID = token.UID
+
+	// Set default role and status if not provided
+	if user.Role == "" {
+		user.Role = entity.RoleReader
+	}
+	if user.Status == "" {
+		user.Status = entity.StatusActive
+	}
+
+	// Create user in database
 	return s.userRepo.Create(ctx, user)
 }
 

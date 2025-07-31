@@ -32,14 +32,17 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Get database configuration based on environment
+	dbConfig := cfg.GetDatabaseConfig()
+
 	// Construct database connection string
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?%s",
-		cfg.Database.User,
-		cfg.Database.Password,
-		cfg.Database.Host,
-		cfg.Database.Port,
-		cfg.Database.Name,
-		cfg.Database.Params,
+		dbConfig.User,
+		dbConfig.Password,
+		dbConfig.Host,
+		dbConfig.Port,
+		dbConfig.Name,
+		dbConfig.Params,
 	)
 
 	// Initialize database connection
@@ -57,9 +60,15 @@ func main() {
 
 	// Initialize dependencies
 	userRepo := mysql.NewUserRepository(db)
-	userService := service.NewUserService(userRepo)
+	userService := service.NewUserService(userRepo, fb.Auth())
 	userUsecase := usecase.NewUserUsecase(userRepo, userService)
 	userHandler := http.NewUserHandler(userUsecase)
+
+	// Initialize payment dependencies
+	paymentRepo := mysql.NewPaymentRepository(db)
+	paymentService := service.NewPaymentService(paymentRepo, cfg.Payment.Xendit.Key)
+	paymentUsecase := usecase.NewPaymentUsecase(paymentService)
+	paymentHandler := http.NewPaymentHandler(paymentUsecase)
 
 	// Initialize auth middleware
 	authMiddleware := middleware.NewAuthMiddleware(fb.Auth())
@@ -69,11 +78,13 @@ func main() {
 
 	// Public routes
 	mux.HandleFunc("/users/register", userHandler.Register)
+	mux.HandleFunc("/payments/callback", paymentHandler.HandleXenditCallback)
 
 	// Protected routes
 	mux.Handle("/users", authMiddleware.Authenticate(client.HandlerFunc(userHandler.GetUser)))
 	mux.Handle("/users/update", authMiddleware.Authenticate(client.HandlerFunc(userHandler.UpdateUser)))
 	mux.Handle("/users/delete", authMiddleware.Authenticate(client.HandlerFunc(userHandler.DeleteUser)))
+	mux.Handle("/payments/initiate", authMiddleware.Authenticate(client.HandlerFunc(paymentHandler.InitiatePayment)))
 
 	// Start server
 	fmt.Printf("Server is running on port %s\n", cfg.App.Port)
