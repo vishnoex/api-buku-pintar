@@ -7,10 +7,13 @@ RUN apk add --no-cache gcc git musl-dev
 WORKDIR /app
 
 # Copy go mod and sum files
-COPY go.mod ./
+COPY go.mod go.sum ./
 
 # Download dependencies
 RUN go mod download
+
+# Copy source code
+COPY . .
 
 # Build the application with vendored dependencies
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -a -installsuffix cgo -o main ./cmd/api
