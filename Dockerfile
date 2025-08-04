@@ -29,6 +29,10 @@ WORKDIR /root/
 # Copy the binary from builder
 COPY --from=builder /app/main .
 
+# Copy config files
+COPY config.json .
+COPY firebase-credentials.json .
+
 # Expose port
 EXPOSE 8080
 
