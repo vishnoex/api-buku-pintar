@@ -12,11 +12,15 @@ import (
 	"fmt"
 	"log"
 	client "net/http"
+	"os"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
 func main() {
+	env := os.Getenv("ENV")
+	log.Println("ENV: ", env)
+	
 	// Load configuration
 	cfg, err := config.Load("./config.json")
 	if err != nil {
@@ -74,17 +78,8 @@ func main() {
 	authMiddleware := middleware.NewAuthMiddleware(fb.Auth())
 
 	// Initialize router
-	mux := &client.ServeMux{}
-
-	// Public routes
-	mux.HandleFunc("/users/register", userHandler.Register)
-	mux.HandleFunc("/payments/callback", paymentHandler.HandleXenditCallback)
-
-	// Protected routes
-	mux.Handle("/users", authMiddleware.Authenticate(client.HandlerFunc(userHandler.GetUser)))
-	mux.Handle("/users/update", authMiddleware.Authenticate(client.HandlerFunc(userHandler.UpdateUser)))
-	mux.Handle("/users/delete", authMiddleware.Authenticate(client.HandlerFunc(userHandler.DeleteUser)))
-	mux.Handle("/payments/initiate", authMiddleware.Authenticate(client.HandlerFunc(paymentHandler.InitiatePayment)))
+	router := http.NewRouter(userHandler, paymentHandler, authMiddleware)
+	mux := router.SetupRoutes()
 
 	// Start server
 	fmt.Printf("Server is running on port %s\n", cfg.App.Port)

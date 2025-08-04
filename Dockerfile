@@ -1,43 +1,26 @@
-# Build stage
-FROM golang:1.21-alpine AS builder
-
-# Set working directory
-WORKDIR /app
-
-# Install git and build dependencies
-RUN apk add --no-cache git gcc musl-dev
-
-# Copy go mod and sum files
-COPY go.mod go.sum ./
-
-# Copy vendor directory
-COPY vendor/ ./vendor/
-
-# Copy source code
-COPY . .
-
-# Build the application with vendored dependencies
-RUN CGO_ENABLED=0 GOOS=linux go build -mod=vendor -a -installsuffix cgo -o main ./cmd/api
-
-# Final stage
-FROM alpine:latest
-
-# Install ca-certificates for HTTPS
+FROM alpine:3.19
+ARG APP_NAME=VAR1
 RUN apk --no-cache add ca-certificates tzdata
 
-WORKDIR /root/
+# Set working directory
+WORKDIR /app/
 
-# Copy the binary from builder
-COPY --from=builder /app/main .
+# Copy the binary file from previous stage
+COPY build/${APP_NAME} /app/${APP_NAME}
 
-# Copy config files
-COPY config.json .
+# add group user
+RUN addgroup --gid 1001 -S "$APP_NAME" && \
+    adduser -G "$APP_NAME" --shell /bin/false --disabled-password -H --uid 1001 "$APP_NAME" && \
+    mkdir -p "/var/log/$APP_NAME" && \
+    chown "$APP_NAME:$APP_NAME" "/var/log/$APP_NAME"
 
-# Copy firebase credentials if it exists (will be created during deployment)
-COPY firebase-credentials.json* ./
+# Copy the environment variable
 
-# Expose port
-EXPOSE 8080
+# Expose application port
+EXPOSE $PORT
 
-# Command to run the executable
-CMD ["./main"]
+# ser user naming
+USER $APP_NAME
+
+# Command to start the application
+CMD ["/app/${APP_NAME}"]

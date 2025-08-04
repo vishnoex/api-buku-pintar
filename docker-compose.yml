@@ -8,6 +8,7 @@ services:
       - "8080:8080"
     environment:
       - TZ=Asia/Jakarta
+      - ENV=local
     volumes:
       - ./config.json:/app/config.json
       - ./firebase-credentials.json:/app/firebase-credentials.json
