@@ -4,27 +4,27 @@
     },
     "payment": {
         "xendit": {
-            "key": "xnd_development_ptfpMQTwqG7Vapllu2rV57HP84kQOhsY8X5PXgDf4UsT5AlJ6kWRruI0eaRJ19rQ"
+            "key": "xnd_development_credentials"
         }
     },
     "database": {
-        "host": "ls-87b5e4d7f32bee404e2bdf14c4ca48c14bc29ca3.cja84syy4pv6.ap-southeast-1.rds.amazonaws.com",
-        "port": "3306",
-        "user": "dbmasteruser",
-        "password": "OfhlnVRo8KUR2nVzxwpcm",
-        "name": "bukupintar",
-        "params": "parseTime=true"
+        "host": "host_url",
+        "port": "port_number",
+        "user": "username",
+        "password": "password",
+        "name": "db_name",
+        "params": "parameters"
     },
     "database_local": {
-        "host": "mysql-8",
-        "port": "3306",
-        "user": "root",
-        "password": "bukanpassword",
-        "name": "bukupintar",
-        "params": "parseTime=true"
+        "host": "host_url",
+        "port": "port_number",
+        "user": "username",
+        "password": "password",
+        "name": "db_name",
+        "params": "parameters"
     },
     "app": {
-        "port": "8080",
-        "environment": ""
+        "port": "port_number",
+        "environment": "local"
     }
 } 

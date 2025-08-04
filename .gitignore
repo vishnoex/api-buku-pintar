@@ -27,6 +27,7 @@ go.work
 # Firebase credentials
 firebase-credentials.json
 *.json.key
+config.json
 
 # OS specific files
 .DS_Store

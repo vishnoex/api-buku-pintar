@@ -56,31 +56,6 @@ jobs:
         fi
         echo "Firebase credentials written successfully"
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.21'
-
-    - name: Install migrate CLI
-      run: |
-        curl -L https://github.com/golang-migrate/migrate/releases/download/v4.16.2/migrate.linux-amd64.tar.gz | tar xvz
-        sudo mv migrate /usr/local/bin/
-
-    - name: Run database migrations
-      env:
-        DB_URL: ${{ secrets.DB_URL }}
-      run: |
-        echo "Running database migrations..."
-        migrate -path ./migrations -database "$DB_URL" up
-        echo "Migrations completed successfully!"
-
-    - name: Verify migration status
-      env:
-        DB_URL: ${{ secrets.DB_URL }}
-      run: |
-        echo "Checking migration status..."
-        migrate -path ./migrations -database "$DB_URL" version
-
     - name: Build, tag, and push image to Amazon ECR
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -164,7 +139,7 @@ jobs:
           docker pull ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
           
           echo "Creating environment file..."
-          echo '${{ secrets.CONFIG }}' > .env
+          echo '${{ secrets.CONFIG }}' > config.json
           
           echo "Stopping existing container..."
           docker stop buku-pintar-api || true
@@ -175,7 +150,6 @@ jobs:
             --name buku-pintar-api \
             -p ${{ env.CONTAINER_PORT }}:${{ env.CONTAINER_PORT }} \
             --env ENV=production \
-            --env-file .env \
             --restart unless-stopped \
             ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
           

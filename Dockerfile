@@ -1,26 +1,29 @@
-FROM alpine:3.19
-ARG APP_NAME=VAR1
-RUN apk --no-cache add ca-certificates tzdata
+# Build stage
+FROM golang:1.21-alpine AS builder
+# Install git and build dependencies
+RUN apk add --no-cache gcc git musl-dev
 
 # Set working directory
-WORKDIR /app/
+WORKDIR /app
 
-# Copy the binary file from previous stage
-COPY build/${APP_NAME} /app/${APP_NAME}
+RUN go mod download
 
-# add group user
-RUN addgroup --gid 1001 -S "$APP_NAME" && \
-    adduser -G "$APP_NAME" --shell /bin/false --disabled-password -H --uid 1001 "$APP_NAME" && \
-    mkdir -p "/var/log/$APP_NAME" && \
-    chown "$APP_NAME:$APP_NAME" "/var/log/$APP_NAME"
+# Build the application with vendored dependencies
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -v -a -installsuffix cgo -o main ./cmd/api
 
-# Copy the environment variable
+# Final stage
+FROM alpine:latest
 
-# Expose application port
-EXPOSE $PORT
+# Install ca-certificates for HTTPS
+RUN apk --no-cache add ca-certificates tzdata
 
-# ser user naming
-USER $APP_NAME
+WORKDIR /root/
 
-# Command to start the application
-CMD ["/app/${APP_NAME}"]
+# Copy the binary from builder
+COPY --from=builder /app/main .
+
+# Expose port
+EXPOSE 8080
+
+# Command to run the executable
+CMD ["./main"]
