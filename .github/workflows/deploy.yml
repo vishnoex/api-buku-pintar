@@ -56,6 +56,17 @@ jobs:
         fi
         echo "Firebase credentials written successfully"
 
+    - name: Write Config file
+      run: |
+        echo "Creating environment file..."
+        echo '${{ secrets.CONFIG }}' > config.json
+        # Verify the file was created and has content
+        if [ ! -s config.json ]; then
+          echo "Error: Config file is empty or was not created"
+          exit 1
+        fi
+        echo "Config file written successfully"
+
     - name: Build, tag, and push image to Amazon ECR
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
@@ -137,9 +148,6 @@ jobs:
           
           echo "Pulling latest image..."
           docker pull ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ github.sha }}
-          
-          echo "Creating environment file..."
-          echo '${{ secrets.CONFIG }}' > config.json
           
           echo "Stopping existing container..."
           docker stop buku-pintar-api || true
