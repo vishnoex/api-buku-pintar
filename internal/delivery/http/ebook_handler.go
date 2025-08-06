@@ -56,7 +56,10 @@ func (h *EbookHandler) ListEbooks(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 // List handles the HTTP GET request to retrieve a list of ebooks with pagination
@@ -95,7 +98,10 @@ func (h *EbookHandler) List(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *EbookHandler) GetEbookByID(w http.ResponseWriter, r *http.Request) {
@@ -132,7 +138,10 @@ func (h *EbookHandler) GetEbookByID(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *EbookHandler) GetEbookBySlug(w http.ResponseWriter, r *http.Request) {
@@ -169,7 +178,10 @@ func (h *EbookHandler) GetEbookBySlug(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *EbookHandler) CreateEbook(w http.ResponseWriter, r *http.Request) {
@@ -205,7 +217,10 @@ func (h *EbookHandler) CreateEbook(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *EbookHandler) UpdateEbook(w http.ResponseWriter, r *http.Request) {
@@ -253,7 +268,10 @@ func (h *EbookHandler) UpdateEbook(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *EbookHandler) DeleteEbook(w http.ResponseWriter, r *http.Request) {
@@ -291,7 +309,10 @@ func (h *EbookHandler) DeleteEbook(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *EbookHandler) ListEbooksByCategory(w http.ResponseWriter, r *http.Request) {
@@ -342,5 +363,8 @@ func (h *EbookHandler) ListEbooksByCategory(w http.ResponseWriter, r *http.Reque
 
 	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

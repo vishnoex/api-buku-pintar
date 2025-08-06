@@ -30,5 +30,3 @@ jobs:
       with:
         version: latest
         args: --out-format=colored-line-number
-        # Explicitly set the output format to avoid the deprecated github-actions format
-        output-format: colored-line-number
