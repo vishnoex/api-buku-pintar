@@ -4,7 +4,6 @@ CREATE TABLE IF NOT EXISTS `users` (
   `email` VARCHAR(255) NOT NULL UNIQUE,
   `password` VARCHAR(255),
   `role` ENUM('admin', 'reader', 'editor') NOT NULL DEFAULT 'reader',
-  `login_providers_id` VARCHAR(36) NOT NULL,
   `avatar` VARCHAR(255),
   `status` ENUM('active', 'inactive', 'suspended') NOT NULL DEFAULT 'active',
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

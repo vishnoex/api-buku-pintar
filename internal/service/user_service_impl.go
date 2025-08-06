@@ -26,11 +26,15 @@ func NewUserService(userRepo repository.UserRepository, firebaseAuth *auth.Clien
 
 func (s *userService) Register(ctx context.Context, user *entity.User) error {
 	// Hash password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if user.Password == nil {
+		return errors.New("password is required")
+	}
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(*user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
-	user.Password = string(hashedPassword)
+	hashedPasswordStr := string(hashedPassword)
+	user.Password = &hashedPasswordStr
 
 	return s.userRepo.Create(ctx, user)
 }
@@ -76,12 +80,13 @@ func (s *userService) GetUserByEmail(ctx context.Context, email string) (*entity
 
 func (s *userService) UpdateUser(ctx context.Context, user *entity.User) error {
 	// If password is being updated, hash it
-	if user.Password != "" {
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if user.Password != nil && *user.Password != "" {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(*user.Password), bcrypt.DefaultCost)
 		if err != nil {
 			return err
 		}
-		user.Password = string(hashedPassword)
+		hashedPasswordStr := string(hashedPassword)
+		user.Password = &hashedPasswordStr
 	}
 
 	return s.userRepo.Update(ctx, user)
@@ -89,4 +94,4 @@ func (s *userService) UpdateUser(ctx context.Context, user *entity.User) error {
 
 func (s *userService) DeleteUser(ctx context.Context, id string) error {
 	return s.userRepo.Delete(ctx, id)
-} 
+}

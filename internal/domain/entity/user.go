@@ -20,23 +20,16 @@ const (
 	StatusSuspended UserStatus = "suspended"
 )
 
-type Provider string
-
-const (
-	EmailPassword Provider = "email-password"
-	Google		  Provider = "google"
-)
-
 // User represents a user in the system
+// Clean Architecture: Entity layer, no dependencies on infrastructure
 type User struct {
-	ID        string     `json:"id"`
-	Name      string     `json:"name"`
-	Email     string     `json:"email"`
-	Password  string     `json:"-"`
-	Role      UserRole   `json:"role"`
-	Provider  Provider   `json:"provider"`
-	Avatar    string     `json:"avatar"`
-	Status    UserStatus `json:"status"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
+	ID                string     `db:"id" json:"id"`
+	Name              string     `db:"name" json:"name"`
+	Email             string     `db:"email" json:"email"`
+	Password          *string    `db:"password" json:"password"`
+	Role              UserRole   `db:"role" json:"role"`
+	Avatar            *string    `db:"avatar" json:"avatar"`
+	Status            UserStatus `db:"status" json:"status"`
+	CreatedAt         time.Time  `db:"created_at" json:"created_at"`
+	UpdatedAt         time.Time  `db:"updated_at" json:"updated_at"`
 } 

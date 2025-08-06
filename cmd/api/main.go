@@ -20,7 +20,7 @@ import (
 func main() {
 	env := os.Getenv("ENV")
 	log.Println("ENV: ", env)
-	
+
 	// Load configuration
 	cfg, err := config.Load("./config.json")
 	if err != nil {
@@ -77,11 +77,16 @@ func main() {
 	// Initialize auth middleware
 	authMiddleware := middleware.NewAuthMiddleware(fb.Auth())
 
+	// Initialize ebook dependencies
+	ebookRepo := mysql.NewEbookRepository(db)
+	ebookUsecase := usecase.NewEbookUsecase(ebookRepo)
+	ebookHandler := http.NewEbookHandler(ebookUsecase)
+
 	// Initialize router
-	router := http.NewRouter(userHandler, paymentHandler, authMiddleware)
+	router := http.NewRouter(ebookHandler, userHandler, paymentHandler, authMiddleware)
 	mux := router.SetupRoutes()
 
 	// Start server
 	fmt.Printf("Server is running on port %s\n", cfg.App.Port)
 	log.Fatal(client.ListenAndServe(":"+cfg.App.Port, mux))
-} 
+}

@@ -12,4 +12,4 @@ type PaymentService interface {
 	GetPaymentByXenditReference(ctx context.Context, ref string) (*entity.Payment, error)
 	UpdatePaymentStatus(ctx context.Context, id string, status entity.PaymentStatus) error
 	ListPaymentsByUserID(ctx context.Context, userID string) ([]*entity.Payment, error)
-} 
+}

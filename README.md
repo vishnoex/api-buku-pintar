@@ -9,7 +9,8 @@ A RESTful API service for Buku Pintar application built with Go, following Clean
 ├── cmd/
 │   └── api/                 # Application entry point
 ├── internal/
-│   ├── domain/             # Enterprise business rules
+│   ├── constant/          # Constant values
+│   ├── domain/            # Enterprise business rules
 │   │   ├── entity/        # Business objects
 │   │   ├── repository/    # Repository interfaces
 │   │   └── service/       # Service interfaces
@@ -18,6 +19,7 @@ A RESTful API service for Buku Pintar application built with Go, following Clean
 │   ├── usecase/          # Application business rules
 │   └── delivery/         # Interface adapters
 │       └── http/         # HTTP handlers
+│          └── response/  # HTTP response models
 ├── pkg/                   # Public packages
 │   ├── config/           # Configuration management
 │   └── firebase/         # Firebase integration

@@ -13,4 +13,4 @@ type PaymentRepository interface {
 	GetByXenditReference(ctx context.Context, ref string) (*entity.Payment, error)
 	Update(ctx context.Context, payment *entity.Payment) error
 	ListByUserID(ctx context.Context, userID string) ([]*entity.Payment, error)
-} 
+}
