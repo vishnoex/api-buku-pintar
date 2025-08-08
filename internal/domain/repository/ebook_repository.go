@@ -13,7 +13,7 @@ type EbookRepository interface {
 	GetBySlug(ctx context.Context, slug string) (*entity.Ebook, error)
 	Update(ctx context.Context, ebook *entity.Ebook) error
 	Delete(ctx context.Context, id string) error
-	List(ctx context.Context, limit, offset int) ([]*entity.Ebook, error)
+	List(ctx context.Context, limit, offset int) ([]*entity.EbookList, error)
 	ListByCategory(ctx context.Context, categoryID string, limit, offset int) ([]*entity.Ebook, error)
 	ListByAuthor(ctx context.Context, authorID string, limit, offset int) ([]*entity.Ebook, error)
 	Count(ctx context.Context) (int64, error)

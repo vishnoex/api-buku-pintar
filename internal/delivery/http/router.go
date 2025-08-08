@@ -33,7 +33,8 @@ func (r *Router) SetupRoutes() *http.ServeMux {
 	mux := &http.ServeMux{}
 
 	// Ebook routes
-	mux.HandleFunc("/ebooks", r.ebookHandler.List)
+	mux.HandleFunc("/ebooks", r.ebookHandler.ListEbooks)
+	mux.HandleFunc("/ebooks/{id}", r.ebookHandler.GetEbookByID)
 
 	// Public routes
 	mux.HandleFunc("/users/register", r.userHandler.Register)

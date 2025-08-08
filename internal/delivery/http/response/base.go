@@ -2,6 +2,8 @@ package response
 
 import (
 	"buku-pintar/internal/constant"
+	"encoding/json"
+	"net/http"
 )
 
 // Response represents the standard API response structure
@@ -59,4 +61,28 @@ func NewPaginatedResponse(data any, total int64, limit, offset int) *Response {
 			Offset: offset,
 		},
 	}
+}
+
+// WriteError writes an error response to the ResponseWriter
+func WriteError(w http.ResponseWriter, statusCode int, errorCode, errorMessage string) {
+	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
+	w.WriteHeader(statusCode)
+	resp := NewErrorResponse(errorCode, errorMessage)
+	json.NewEncoder(w).Encode(resp)
+}
+
+// WriteSuccess writes a success response to the ResponseWriter
+func WriteSuccess(w http.ResponseWriter, statusCode int, data any, message string) {
+	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
+	w.WriteHeader(statusCode)
+	resp := NewSuccessResponse(data, message)
+	json.NewEncoder(w).Encode(resp)
+}
+
+// WritePaginated writes a paginated response to the ResponseWriter
+func WritePaginated(w http.ResponseWriter, data any, total int64, limit, offset int) {
+	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
+	w.WriteHeader(http.StatusOK)
+	resp := NewPaginatedResponse(data, total, limit, offset)
+	json.NewEncoder(w).Encode(resp)
 }

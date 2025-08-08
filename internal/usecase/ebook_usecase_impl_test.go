@@ -12,13 +12,14 @@ import (
 
 // MockEbookRepository is a simple mock implementation for testing
 type MockEbookRepository struct {
-	ebooks     []*entity.Ebook
-	ebook      *entity.Ebook
-	err        error
-	count      int64
-	createFunc func(ctx context.Context, ebook *entity.Ebook) error
-	listFunc   func(ctx context.Context, limit, offset int) ([]*entity.Ebook, error)
-	getByIDFunc func(ctx context.Context, id string) (*entity.Ebook, error)
+	ebooks        []*entity.Ebook
+	ebookList     []*entity.EbookList
+	ebook         *entity.Ebook
+	err           error
+	count         int64
+	createFunc    func(ctx context.Context, ebook *entity.Ebook) error
+	listFunc      func(ctx context.Context, limit, offset int) ([]*entity.EbookList, error)
+	getByIDFunc   func(ctx context.Context, id string) (*entity.Ebook, error)
 	getBySlugFunc func(ctx context.Context, slug string) (*entity.Ebook, error)
 	// For testing specific scenarios
 	existingBySlug *entity.Ebook
@@ -56,11 +57,11 @@ func (m *MockEbookRepository) Delete(ctx context.Context, id string) error {
 	return m.err
 }
 
-func (m *MockEbookRepository) List(ctx context.Context, limit, offset int) ([]*entity.Ebook, error) {
+func (m *MockEbookRepository) List(ctx context.Context, limit, offset int) ([]*entity.EbookList, error) {
 	if m.listFunc != nil {
 		return m.listFunc(ctx, limit, offset)
 	}
-	return m.ebooks, m.err
+	return m.ebookList, m.err
 }
 
 func (m *MockEbookRepository) ListByCategory(ctx context.Context, categoryID string, limit, offset int) ([]*entity.Ebook, error) {
@@ -99,26 +100,26 @@ func TestEbookUsecase_ListEbooks(t *testing.T) {
 			offset: 0,
 			mockEbooks: []*entity.Ebook{
 				{
-					ID:          uuid.New().String(),
-					Title:       "Test Ebook 1",
-					AuthorID:    "author-1",
-					CategoryID:  "category-1",
-					Price:       1000,
-					Language:    "en",
-					Format:      entity.FormatPDF,
-					CreatedAt:   time.Now(),
-					UpdatedAt:   time.Now(),
+					ID:         uuid.New().String(),
+					Title:      "Test Ebook 1",
+					AuthorID:   "author-1",
+					CategoryID: "category-1",
+					Price:      1000,
+					Language:   "en",
+					Format:     entity.FormatPDF,
+					CreatedAt:  time.Now(),
+					UpdatedAt:  time.Now(),
 				},
 				{
-					ID:          uuid.New().String(),
-					Title:       "Test Ebook 2",
-					AuthorID:    "author-2",
-					CategoryID:  "category-2",
-					Price:       2000,
-					Language:    "en",
-					Format:      entity.FormatEPUB,
-					CreatedAt:   time.Now(),
-					UpdatedAt:   time.Now(),
+					ID:         uuid.New().String(),
+					Title:      "Test Ebook 2",
+					AuthorID:   "author-2",
+					CategoryID: "category-2",
+					Price:      2000,
+					Language:   "en",
+					Format:     entity.FormatEPUB,
+					CreatedAt:  time.Now(),
+					UpdatedAt:  time.Now(),
 				},
 			},
 			mockError:      nil,
@@ -220,15 +221,15 @@ func TestEbookUsecase_ListEbooksByCategory(t *testing.T) {
 			offset:     0,
 			mockEbooks: []*entity.Ebook{
 				{
-					ID:          uuid.New().String(),
-					Title:       "Category Ebook 1",
-					AuthorID:    "author-1",
-					CategoryID:  "category-1",
-					Price:       1000,
-					Language:    "en",
-					Format:      entity.FormatPDF,
-					CreatedAt:   time.Now(),
-					UpdatedAt:   time.Now(),
+					ID:         uuid.New().String(),
+					Title:      "Category Ebook 1",
+					AuthorID:   "author-1",
+					CategoryID: "category-1",
+					Price:      1000,
+					Language:   "en",
+					Format:     entity.FormatPDF,
+					CreatedAt:  time.Now(),
+					UpdatedAt:  time.Now(),
 				},
 			},
 			mockError:      nil,
@@ -310,15 +311,15 @@ func TestEbookUsecase_GetEbookByID(t *testing.T) {
 			name:    "should return ebook by ID successfully",
 			ebookID: "ebook-1",
 			mockEbook: &entity.Ebook{
-				ID:          "ebook-1",
-				Title:       "Test Ebook",
-				AuthorID:    "author-1",
-				CategoryID:  "category-1",
-				Price:       1000,
-				Language:    "en",
-				Format:      entity.FormatPDF,
-				CreatedAt:   time.Now(),
-				UpdatedAt:   time.Now(),
+				ID:         "ebook-1",
+				Title:      "Test Ebook",
+				AuthorID:   "author-1",
+				CategoryID: "category-1",
+				Price:      1000,
+				Language:   "en",
+				Format:     entity.FormatPDF,
+				CreatedAt:  time.Now(),
+				UpdatedAt:  time.Now(),
 			},
 			mockError:     nil,
 			expectedFound: true,
@@ -398,19 +399,19 @@ func TestEbookUsecase_GetEbookBySlug(t *testing.T) {
 		expectedError bool
 	}{
 		{
-			name:  "should return ebook by slug successfully",
-			slug:  "test-ebook",
+			name: "should return ebook by slug successfully",
+			slug: "test-ebook",
 			mockEbook: &entity.Ebook{
-				ID:          "ebook-1",
-				Title:       "Test Ebook",
-				Slug:        "test-ebook",
-				AuthorID:    "author-1",
-				CategoryID:  "category-1",
-				Price:       1000,
-				Language:    "en",
-				Format:      entity.FormatPDF,
-				CreatedAt:   time.Now(),
-				UpdatedAt:   time.Now(),
+				ID:         "ebook-1",
+				Title:      "Test Ebook",
+				Slug:       "test-ebook",
+				AuthorID:   "author-1",
+				CategoryID: "category-1",
+				Price:      1000,
+				Language:   "en",
+				Format:     entity.FormatPDF,
+				CreatedAt:  time.Now(),
+				UpdatedAt:  time.Now(),
 			},
 			mockError:     nil,
 			expectedFound: true,
@@ -690,13 +691,13 @@ func TestEbookUsecase_UpdateEbook(t *testing.T) {
 				ebook: tt.mockExisting,
 				err:   tt.mockError,
 			}
-					// For update test, we need to handle the slug check differently
-		if tt.name == "should update ebook successfully" {
-			mockRepo.getBySlugFunc = func(ctx context.Context, slug string) (*entity.Ebook, error) {
-				// Return nil for the new slug, indicating no existing ebook with that slug
-				return nil, nil
+			// For update test, we need to handle the slug check differently
+			if tt.name == "should update ebook successfully" {
+				mockRepo.getBySlugFunc = func(ctx context.Context, slug string) (*entity.Ebook, error) {
+					// Return nil for the new slug, indicating no existing ebook with that slug
+					return nil, nil
+				}
 			}
-		}
 			usecase := NewEbookUsecase(mockRepo)
 			ctx := context.Background()
 
@@ -749,8 +750,8 @@ func TestEbookUsecase_DeleteEbook(t *testing.T) {
 			expectedError: true,
 		},
 		{
-			name:          "should return error when repository fails",
-			ebookID:       "ebook-1",
+			name:    "should return error when repository fails",
+			ebookID: "ebook-1",
 			mockExisting: &entity.Ebook{
 				ID: "ebook-1",
 			},

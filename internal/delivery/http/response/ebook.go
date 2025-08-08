@@ -1,5 +1,9 @@
 package response
 
+import (
+	"buku-pintar/internal/domain/entity"
+)
+
 type EbookResponse struct {
 	ID          string `json:"id"`
 	Title       string `json:"title"`
@@ -23,4 +27,25 @@ type EbookResponse struct {
 	TableOfContents []*TableOfContentResponse    `json:"table_of_contents"`
 	Summary         *EbookSummaryResponse        `json:"summary"`
 	PremiumSummary  *EbookPremiumSummaryResponse `json:"premium_summary"`
+}
+
+type EbookListResponse struct {
+	ID         string `json:"id"`
+	Title      string `json:"title"`
+	Slug       string `json:"slug"`
+	CoverImage string `json:"cover_image"`
+	Status     string `json:"status"`
+	Price      int    `json:"price"`
+	Discount   int    `json:"discount"`
+}
+
+func ParseEbookListResponse(ebook *entity.EbookList) *EbookListResponse {
+	return &EbookListResponse{
+		ID:         ebook.ID,
+		Title:      ebook.Title,
+		Slug:       ebook.Slug,
+		CoverImage: ebook.CoverImage,
+		Price:      ebook.Price,
+		Discount:   0,
+	}
 }
