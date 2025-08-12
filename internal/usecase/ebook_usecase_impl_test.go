@@ -89,7 +89,7 @@ func TestEbookUsecase_ListEbooks(t *testing.T) {
 		name           string
 		limit          int
 		offset         int
-		mockEbooks     []*entity.Ebook
+		mockEbookList  []*entity.EbookList
 		mockError      error
 		expectedLength int
 		expectedError  bool
@@ -98,28 +98,20 @@ func TestEbookUsecase_ListEbooks(t *testing.T) {
 			name:   "should return list of ebooks successfully",
 			limit:  10,
 			offset: 0,
-			mockEbooks: []*entity.Ebook{
+			mockEbookList: []*entity.EbookList{
 				{
 					ID:         uuid.New().String(),
 					Title:      "Test Ebook 1",
-					AuthorID:   "author-1",
-					CategoryID: "category-1",
+					Slug:       "test-ebook-1",
+					CoverImage: "cover1.jpg",
 					Price:      1000,
-					Language:   "en",
-					Format:     entity.FormatPDF,
-					CreatedAt:  time.Now(),
-					UpdatedAt:  time.Now(),
 				},
 				{
 					ID:         uuid.New().String(),
 					Title:      "Test Ebook 2",
-					AuthorID:   "author-2",
-					CategoryID: "category-2",
+					Slug:       "test-ebook-2",
+					CoverImage: "cover2.jpg",
 					Price:      2000,
-					Language:   "en",
-					Format:     entity.FormatEPUB,
-					CreatedAt:  time.Now(),
-					UpdatedAt:  time.Now(),
 				},
 			},
 			mockError:      nil,
@@ -130,7 +122,7 @@ func TestEbookUsecase_ListEbooks(t *testing.T) {
 			name:           "should return empty list when no ebooks exist",
 			limit:          10,
 			offset:         0,
-			mockEbooks:     []*entity.Ebook{},
+			mockEbookList:  []*entity.EbookList{},
 			mockError:      nil,
 			expectedLength: 0,
 			expectedError:  false,
@@ -139,7 +131,7 @@ func TestEbookUsecase_ListEbooks(t *testing.T) {
 			name:           "should return error when repository fails",
 			limit:          10,
 			offset:         0,
-			mockEbooks:     nil,
+			mockEbookList:  nil,
 			mockError:      errors.New("database error"),
 			expectedLength: 0,
 			expectedError:  true,
@@ -148,7 +140,7 @@ func TestEbookUsecase_ListEbooks(t *testing.T) {
 			name:           "should use default limit when limit is 0",
 			limit:          0,
 			offset:         0,
-			mockEbooks:     []*entity.Ebook{},
+			mockEbookList:  []*entity.EbookList{},
 			mockError:      nil,
 			expectedLength: 0,
 			expectedError:  false,
@@ -157,7 +149,7 @@ func TestEbookUsecase_ListEbooks(t *testing.T) {
 			name:           "should use default limit when limit is negative",
 			limit:          -5,
 			offset:         0,
-			mockEbooks:     []*entity.Ebook{},
+			mockEbookList:  []*entity.EbookList{},
 			mockError:      nil,
 			expectedLength: 0,
 			expectedError:  false,
@@ -166,7 +158,7 @@ func TestEbookUsecase_ListEbooks(t *testing.T) {
 			name:           "should use 0 offset when offset is negative",
 			limit:          10,
 			offset:         -5,
-			mockEbooks:     []*entity.Ebook{},
+			mockEbookList:  []*entity.EbookList{},
 			mockError:      nil,
 			expectedLength: 0,
 			expectedError:  false,
@@ -177,7 +169,7 @@ func TestEbookUsecase_ListEbooks(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Arrange
 			mockRepo := &MockEbookRepository{
-				ebooks: tt.mockEbooks,
+				ebookList: tt.mockEbookList,
 				err:    tt.mockError,
 			}
 			usecase := NewEbookUsecase(mockRepo)
