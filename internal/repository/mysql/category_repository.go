@@ -19,7 +19,7 @@ func NewCategoryRepository(db *sql.DB) repository.CategoryRepository {
 func (r *categoryRepository) Create(ctx context.Context, category *entity.Category) error {
 	query := `INSERT INTO categories (id, name, description, icon_link, parent_id, order_number, is_active, created_at, updated_at) 
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	
+
 	now := time.Now()
 	category.CreatedAt = now
 	category.UpdatedAt = now
@@ -41,7 +41,7 @@ func (r *categoryRepository) Create(ctx context.Context, category *entity.Catego
 func (r *categoryRepository) GetByID(ctx context.Context, id string) (*entity.Category, error) {
 	query := `SELECT id, name, description, icon_link, parent_id, order_number, is_active, created_at, updated_at 
 		FROM categories WHERE id = ?`
-	
+
 	category := &entity.Category{}
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&category.ID,
@@ -67,7 +67,7 @@ func (r *categoryRepository) GetByID(ctx context.Context, id string) (*entity.Ca
 func (r *categoryRepository) GetByName(ctx context.Context, name string) (*entity.Category, error) {
 	query := `SELECT id, name, description, icon_link, parent_id, order_number, is_active, created_at, updated_at 
 		FROM categories WHERE name = ?`
-	
+
 	category := &entity.Category{}
 	err := r.db.QueryRowContext(ctx, query, name).Scan(
 		&category.ID,
@@ -94,9 +94,9 @@ func (r *categoryRepository) Update(ctx context.Context, category *entity.Catego
 	query := `UPDATE categories 
 		SET name = ?, description = ?, icon_link = ?, parent_id = ?, order_number = ?, is_active = ?, updated_at = ?
 		WHERE id = ?`
-	
+
 	category.UpdatedAt = time.Now()
-	
+
 	_, err := r.db.ExecContext(ctx, query,
 		category.Name,
 		category.Description,
@@ -129,7 +129,7 @@ func (r *categoryRepository) List(ctx context.Context, limit, offset int) ([]*en
 	var categories []*entity.Category
 	for rows.Next() {
 		category := &entity.Category{}
-		err := rows.Scan(
+		err = rows.Scan(
 			&category.ID,
 			&category.Name,
 			&category.Description,
@@ -166,7 +166,7 @@ func (r *categoryRepository) ListActive(ctx context.Context, limit, offset int) 
 	var categories []*entity.Category
 	for rows.Next() {
 		category := &entity.Category{}
-		err := rows.Scan(
+		err = rows.Scan(
 			&category.ID,
 			&category.Name,
 			&category.Description,
@@ -203,7 +203,7 @@ func (r *categoryRepository) ListByParent(ctx context.Context, parentID string, 
 	var categories []*entity.Category
 	for rows.Next() {
 		category := &entity.Category{}
-		err := rows.Scan(
+		err = rows.Scan(
 			&category.ID,
 			&category.Name,
 			&category.Description,

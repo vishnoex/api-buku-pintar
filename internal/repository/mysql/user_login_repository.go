@@ -19,7 +19,7 @@ func NewUserLoginRepository(db *sql.DB) repository.UserLoginRepository {
 func (r *userLoginRepository) Create(ctx context.Context, userLogin *entity.UserLogin) error {
 	query := `INSERT INTO user_logins (id, user_id, login_provider_id, status, created_at, updated_at) 
 		VALUES (?, ?, ?, ?, ?, ?)`
-	
+
 	now := time.Now()
 	userLogin.CreatedAt = now
 	userLogin.UpdatedAt = now
@@ -38,7 +38,7 @@ func (r *userLoginRepository) Create(ctx context.Context, userLogin *entity.User
 func (r *userLoginRepository) GetByID(ctx context.Context, id string) (*entity.UserLogin, error) {
 	query := `SELECT id, user_id, login_provider_id, status, created_at, updated_at 
 		FROM user_logins WHERE id = ?`
-	
+
 	userLogin := &entity.UserLogin{}
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&userLogin.ID,
@@ -61,7 +61,7 @@ func (r *userLoginRepository) GetByID(ctx context.Context, id string) (*entity.U
 func (r *userLoginRepository) GetByUserAndProvider(ctx context.Context, userID, loginProviderID string) (*entity.UserLogin, error) {
 	query := `SELECT id, user_id, login_provider_id, status, created_at, updated_at 
 		FROM user_logins WHERE user_id = ? AND login_provider_id = ?`
-	
+
 	userLogin := &entity.UserLogin{}
 	err := r.db.QueryRowContext(ctx, query, userID, loginProviderID).Scan(
 		&userLogin.ID,
@@ -85,9 +85,9 @@ func (r *userLoginRepository) Update(ctx context.Context, userLogin *entity.User
 	query := `UPDATE user_logins 
 		SET user_id = ?, login_provider_id = ?, status = ?, updated_at = ?
 		WHERE id = ?`
-	
+
 	userLogin.UpdatedAt = time.Now()
-	
+
 	_, err := r.db.ExecContext(ctx, query,
 		userLogin.UserID,
 		userLogin.LoginProviderID,
@@ -117,7 +117,7 @@ func (r *userLoginRepository) ListByUser(ctx context.Context, userID string) ([]
 	var userLogins []*entity.UserLogin
 	for rows.Next() {
 		userLogin := &entity.UserLogin{}
-		err := rows.Scan(
+		err = rows.Scan(
 			&userLogin.ID,
 			&userLogin.UserID,
 			&userLogin.LoginProviderID,
@@ -151,7 +151,7 @@ func (r *userLoginRepository) ListActiveByUser(ctx context.Context, userID strin
 	var userLogins []*entity.UserLogin
 	for rows.Next() {
 		userLogin := &entity.UserLogin{}
-		err := rows.Scan(
+		err = rows.Scan(
 			&userLogin.ID,
 			&userLogin.UserID,
 			&userLogin.LoginProviderID,

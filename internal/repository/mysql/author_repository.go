@@ -19,7 +19,7 @@ func NewAuthorRepository(db *sql.DB) repository.AuthorRepository {
 func (r *authorRepository) Create(ctx context.Context, author *entity.Author) error {
 	query := `INSERT INTO authors (id, name, avatar, created_at, updated_at) 
 		VALUES (?, ?, ?, ?, ?)`
-	
+
 	now := time.Now()
 	author.CreatedAt = now
 	author.UpdatedAt = now
@@ -37,7 +37,7 @@ func (r *authorRepository) Create(ctx context.Context, author *entity.Author) er
 func (r *authorRepository) GetByID(ctx context.Context, id string) (*entity.Author, error) {
 	query := `SELECT id, name, avatar, created_at, updated_at 
 		FROM authors WHERE id = ?`
-	
+
 	author := &entity.Author{}
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&author.ID,
@@ -59,7 +59,7 @@ func (r *authorRepository) GetByID(ctx context.Context, id string) (*entity.Auth
 func (r *authorRepository) GetByName(ctx context.Context, name string) (*entity.Author, error) {
 	query := `SELECT id, name, avatar, created_at, updated_at 
 		FROM authors WHERE name = ?`
-	
+
 	author := &entity.Author{}
 	err := r.db.QueryRowContext(ctx, query, name).Scan(
 		&author.ID,
@@ -82,9 +82,9 @@ func (r *authorRepository) Update(ctx context.Context, author *entity.Author) er
 	query := `UPDATE authors 
 		SET name = ?, avatar = ?, updated_at = ?
 		WHERE id = ?`
-	
+
 	author.UpdatedAt = time.Now()
-	
+
 	_, err := r.db.ExecContext(ctx, query,
 		author.Name,
 		author.Avatar,
@@ -113,7 +113,7 @@ func (r *authorRepository) List(ctx context.Context, limit, offset int) ([]*enti
 	var authors []*entity.Author
 	for rows.Next() {
 		author := &entity.Author{}
-		err := rows.Scan(
+		err = rows.Scan(
 			&author.ID,
 			&author.Name,
 			&author.Avatar,

@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS `categories` (
   `id` VARCHAR(36) PRIMARY KEY,
   `name` VARCHAR(255) NOT NULL UNIQUE,
+  `slug` VARCHAR(255) NOT NULL UNIQUE,
   `description` TEXT,
   `icon_link` VARCHAR(255) NOT NULL,
   `parent_id` VARCHAR(36),

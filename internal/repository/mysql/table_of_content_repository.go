@@ -19,7 +19,7 @@ func NewTableOfContentRepository(db *sql.DB) repository.TableOfContentRepository
 func (r *tableOfContentRepository) Create(ctx context.Context, toc *entity.TableOfContent) error {
 	query := `INSERT INTO table_of_contents (id, ebook_id, title, page_number, created_at, updated_at) 
 		VALUES (?, ?, ?, ?, ?, ?)`
-	
+
 	now := time.Now()
 	toc.CreatedAt = now
 	toc.UpdatedAt = now
@@ -38,7 +38,7 @@ func (r *tableOfContentRepository) Create(ctx context.Context, toc *entity.Table
 func (r *tableOfContentRepository) GetByID(ctx context.Context, id string) (*entity.TableOfContent, error) {
 	query := `SELECT id, ebook_id, title, page_number, created_at, updated_at 
 		FROM table_of_contents WHERE id = ?`
-	
+
 	toc := &entity.TableOfContent{}
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&toc.ID,
@@ -62,9 +62,9 @@ func (r *tableOfContentRepository) Update(ctx context.Context, toc *entity.Table
 	query := `UPDATE table_of_contents 
 		SET ebook_id = ?, title = ?, page_number = ?, updated_at = ?
 		WHERE id = ?`
-	
+
 	toc.UpdatedAt = time.Now()
-	
+
 	_, err := r.db.ExecContext(ctx, query,
 		toc.EbookID,
 		toc.Title,
@@ -94,7 +94,7 @@ func (r *tableOfContentRepository) ListByEbook(ctx context.Context, ebookID stri
 	var tableOfContents []*entity.TableOfContent
 	for rows.Next() {
 		toc := &entity.TableOfContent{}
-		err := rows.Scan(
+		err = rows.Scan(
 			&toc.ID,
 			&toc.EbookID,
 			&toc.Title,

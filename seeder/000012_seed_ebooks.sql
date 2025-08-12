@@ -6,10 +6,10 @@ INSERT IGNORE INTO `authors` (`id`, `name`, `avatar`) VALUES
 ('b2c3d4e5-f6a7-8901-bcde-f23456789012', 'Jane Smith', 'https://example.com/avatars/janesmith.jpg'),
 ('c3d4e5f6-a7b8-9012-cdef-345678901234', 'Robert Johnson', 'https://example.com/avatars/robertjohnson.jpg');
 
-INSERT IGNORE INTO `categories` (`id`, `name`, `description`, `icon_link`, `is_active`, `order_number`) VALUES
-('d4e5f6a7-b8c9-0123-defg-456789012345', 'Fiction', 'Fiction books and novels', 'https://example.com/icons/fiction.png', TRUE, 1),
-('e5f6a7b8-c9d0-1234-efgh-567890123456', 'Science', 'Science and educational books', 'https://example.com/icons/science.png', TRUE, 2),
-('f6a7b8c9-d0e1-2345-fghi-678901234567', 'Business', 'Business and entrepreneurship books', 'https://example.com/icons/business.png', TRUE, 3);
+INSERT IGNORE INTO `categories` (`id`, `name`, `slug`, `description`, `icon_link`, `is_active`, `order_number`) VALUES
+('d4e5f6a7-b8c9-0123-defg-456789012345', 'Fiction', 'fiction', 'Fiction books and novels', 'https://example.com/icons/fiction.png', TRUE, 1),
+('e5f6a7b8-c9d0-1234-efgh-567890123456', 'Science', 'science', 'Science and educational books', 'https://example.com/icons/science.png', TRUE, 2),
+('f6a7b8c9-d0e1-2345-fghi-678901234567', 'Business', 'business', 'Business and entrepreneurship books', 'https://example.com/icons/business.png', TRUE, 3);
 
 INSERT IGNORE INTO `content_statuses` (`id`, `name`) VALUES
 ('a7b8c9d0-e1f2-3456-ghij-789012345678', 'draft'),

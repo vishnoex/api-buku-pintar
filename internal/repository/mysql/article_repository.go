@@ -19,7 +19,7 @@ func NewArticleRepository(db *sql.DB) repository.ArticleRepository {
 func (r *articleRepository) Create(ctx context.Context, article *entity.Article) error {
 	query := `INSERT INTO articles (id, author_id, title, content, slug, excerpt, cover_image, category_id, content_status_id, reading_time, published_at, created_at, updated_at) 
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	
+
 	now := time.Now()
 	article.CreatedAt = now
 	article.UpdatedAt = now
@@ -45,7 +45,7 @@ func (r *articleRepository) Create(ctx context.Context, article *entity.Article)
 func (r *articleRepository) GetByID(ctx context.Context, id string) (*entity.Article, error) {
 	query := `SELECT id, author_id, title, content, slug, excerpt, cover_image, category_id, content_status_id, reading_time, published_at, created_at, updated_at 
 		FROM articles WHERE id = ?`
-	
+
 	article := &entity.Article{}
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&article.ID,
@@ -75,7 +75,7 @@ func (r *articleRepository) GetByID(ctx context.Context, id string) (*entity.Art
 func (r *articleRepository) GetBySlug(ctx context.Context, slug string) (*entity.Article, error) {
 	query := `SELECT id, author_id, title, content, slug, excerpt, cover_image, category_id, content_status_id, reading_time, published_at, created_at, updated_at 
 		FROM articles WHERE slug = ?`
-	
+
 	article := &entity.Article{}
 	err := r.db.QueryRowContext(ctx, query, slug).Scan(
 		&article.ID,
@@ -106,9 +106,9 @@ func (r *articleRepository) Update(ctx context.Context, article *entity.Article)
 	query := `UPDATE articles 
 		SET author_id = ?, title = ?, content = ?, slug = ?, excerpt = ?, cover_image = ?, category_id = ?, content_status_id = ?, reading_time = ?, published_at = ?, updated_at = ?
 		WHERE id = ?`
-	
+
 	article.UpdatedAt = time.Now()
-	
+
 	_, err := r.db.ExecContext(ctx, query,
 		article.AuthorID,
 		article.Title,
@@ -145,7 +145,7 @@ func (r *articleRepository) List(ctx context.Context, limit, offset int) ([]*ent
 	var articles []*entity.Article
 	for rows.Next() {
 		article := &entity.Article{}
-		err := rows.Scan(
+		err = rows.Scan(
 			&article.ID,
 			&article.AuthorID,
 			&article.Title,
@@ -186,7 +186,7 @@ func (r *articleRepository) ListByAuthor(ctx context.Context, authorID string, l
 	var articles []*entity.Article
 	for rows.Next() {
 		article := &entity.Article{}
-		err := rows.Scan(
+		err = rows.Scan(
 			&article.ID,
 			&article.AuthorID,
 			&article.Title,
@@ -227,7 +227,7 @@ func (r *articleRepository) ListByCategory(ctx context.Context, categoryID strin
 	var articles []*entity.Article
 	for rows.Next() {
 		article := &entity.Article{}
-		err := rows.Scan(
+		err = rows.Scan(
 			&article.ID,
 			&article.AuthorID,
 			&article.Title,
@@ -268,7 +268,7 @@ func (r *articleRepository) ListPublished(ctx context.Context, limit, offset int
 	var articles []*entity.Article
 	for rows.Next() {
 		article := &entity.Article{}
-		err := rows.Scan(
+		err = rows.Scan(
 			&article.ID,
 			&article.AuthorID,
 			&article.Title,

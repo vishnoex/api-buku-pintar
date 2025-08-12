@@ -7,30 +7,36 @@ import (
 
 // Router handles all route definitions
 type Router struct {
-	ebookHandler   *EbookHandler
-	userHandler    *UserHandler
-	paymentHandler *PaymentHandler
-	authMiddleware *middleware.AuthMiddleware
+	categoryHandler *CategoryHandler
+	ebookHandler    *EbookHandler
+	userHandler     *UserHandler
+	paymentHandler  *PaymentHandler
+	authMiddleware  *middleware.AuthMiddleware
 }
 
 // NewRouter creates a new router instance
 func NewRouter(
+	categoryHandler *CategoryHandler,
 	ebookHandler *EbookHandler,
 	userHandler *UserHandler,
 	paymentHandler *PaymentHandler,
 	authMiddleware *middleware.AuthMiddleware,
 ) *Router {
 	return &Router{
-		ebookHandler:   ebookHandler,
-		userHandler:    userHandler,
-		paymentHandler: paymentHandler,
-		authMiddleware: authMiddleware,
+		categoryHandler: categoryHandler,
+		ebookHandler:    ebookHandler,
+		userHandler:     userHandler,
+		paymentHandler:  paymentHandler,
+		authMiddleware:  authMiddleware,
 	}
 }
 
 // SetupRoutes configures all routes and returns the configured mux
 func (r *Router) SetupRoutes() *http.ServeMux {
 	mux := &http.ServeMux{}
+
+	// Category routes
+	mux.HandleFunc("/categories", r.categoryHandler.ListCategory)
 
 	// Ebook routes
 	mux.HandleFunc("/ebooks", r.ebookHandler.ListEbooks)
