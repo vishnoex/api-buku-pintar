@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"buku-pintar/internal/delivery/http/response"
 	"buku-pintar/internal/domain/entity"
 	"buku-pintar/internal/domain/repository"
 	"context"
@@ -106,7 +107,7 @@ func (u *ebookUsecase) DeleteEbook(ctx context.Context, id string) error {
 	return u.ebookRepo.Delete(ctx, id)
 }
 
-func (u *ebookUsecase) ListEbooks(ctx context.Context, limit, offset int) ([]*entity.Ebook, error) {
+func (u *ebookUsecase) ListEbooks(ctx context.Context, limit, offset int) ([]*response.EbookListResponse, error) {
 	// Validate pagination parameters
 	if limit <= 0 {
 		limit = 10 // default limit
@@ -115,7 +116,17 @@ func (u *ebookUsecase) ListEbooks(ctx context.Context, limit, offset int) ([]*en
 		offset = 0
 	}
 
-	return u.ebookRepo.List(ctx, limit, offset)
+	ebooks := []*response.EbookListResponse{}
+	ebookList, err := u.ebookRepo.List(ctx, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, ebook := range ebookList {
+		ebooks = append(ebooks, response.ParseEbookListResponse(ebook))
+	}
+
+	return ebooks, nil
 }
 
 func (u *ebookUsecase) ListEbooksByCategory(ctx context.Context, categoryID string, limit, offset int) ([]*entity.Ebook, error) {

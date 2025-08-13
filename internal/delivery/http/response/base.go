@@ -2,6 +2,8 @@ package response
 
 import (
 	"buku-pintar/internal/constant"
+	"encoding/json"
+	"net/http"
 )
 
 // Response represents the standard API response structure
@@ -58,5 +60,45 @@ func NewPaginatedResponse(data any, total int64, limit, offset int) *Response {
 			Limit:  limit,
 			Offset: offset,
 		},
+	}
+}
+
+// WriteError writes an error response to the ResponseWriter
+func WriteError(w http.ResponseWriter, statusCode int, errorCode, errorMessage string) {
+	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
+	w.Header().Set(constant.ACCESS_CONTROL_ALLOW_ORIGIN, "*")
+	w.Header().Set(constant.ACCESS_CONTROL_ALLOW_HEADER, "Content-Type")
+	w.WriteHeader(statusCode)
+	resp := NewErrorResponse(errorCode, errorMessage)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		return
+	}
+}
+
+// WriteSuccess writes a success response to the ResponseWriter
+func WriteSuccess(w http.ResponseWriter, statusCode int, data any, message string) {
+	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
+	w.Header().Set(constant.ACCESS_CONTROL_ALLOW_ORIGIN, "*")
+	w.Header().Set(constant.ACCESS_CONTROL_ALLOW_HEADER, "Content-Type")
+	w.WriteHeader(statusCode)
+	resp := NewSuccessResponse(data, message)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		return
+	}
+}
+
+// WritePaginated writes a paginated response to the ResponseWriter
+func WritePaginated(w http.ResponseWriter, data any, total int64, limit, offset int) {
+	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
+	w.Header().Set(constant.ACCESS_CONTROL_ALLOW_ORIGIN, "*")
+	w.Header().Set(constant.ACCESS_CONTROL_ALLOW_METHOD, "GET")
+	w.Header().Set(constant.ACCESS_CONTROL_ALLOW_HEADER, "Content-Type")
+	w.WriteHeader(http.StatusOK)
+	resp := NewPaginatedResponse(data, total, limit, offset)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		return
 	}
 }

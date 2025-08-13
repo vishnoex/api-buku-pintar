@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"buku-pintar/internal/delivery/http/response"
 	"buku-pintar/internal/domain/entity"
 	"context"
 )
@@ -12,7 +13,7 @@ type EbookUsecase interface {
 	GetEbookBySlug(ctx context.Context, slug string) (*entity.Ebook, error)
 	UpdateEbook(ctx context.Context, ebook *entity.Ebook) error
 	DeleteEbook(ctx context.Context, id string) error
-	ListEbooks(ctx context.Context, limit, offset int) ([]*entity.Ebook, error)
+	ListEbooks(ctx context.Context, limit, offset int) ([]*response.EbookListResponse, error)
 	ListEbooksByCategory(ctx context.Context, categoryID string, limit, offset int) ([]*entity.Ebook, error)
 	ListEbooksByAuthor(ctx context.Context, authorID string, limit, offset int) ([]*entity.Ebook, error)
 	CountEbooks(ctx context.Context) (int64, error)

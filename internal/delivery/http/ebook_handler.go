@@ -5,10 +5,11 @@ import (
 	"buku-pintar/internal/usecase"
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"buku-pintar/internal/constant"
+	"buku-pintar/internal/delivery/http/response"
+	"buku-pintar/internal/helper"
 )
 
 type EbookHandler struct {
@@ -22,269 +23,159 @@ func NewEbookHandler(ebookUsecase usecase.EbookUsecase) *EbookHandler {
 }
 
 func (h *EbookHandler) ListEbooks(w http.ResponseWriter, r *http.Request) {
-	// Parse query parameters
-	limitStr := r.URL.Query().Get("limit")
-	offsetStr := r.URL.Query().Get("offset")
-
-	limit := 10 // default limit
-	offset := 0 // default offset
-
-	if limitStr != "" {
-		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
-			limit = l
-		}
-	}
-
-	if offsetStr != "" {
-		if o, err := strconv.Atoi(offsetStr); err == nil && o >= 0 {
-			offset = o
-		}
-	}
+	limit, offset := helper.HandlePagination(r)
 
 	// Get ebooks from usecase
 	ebooks, err := h.ebookUsecase.ListEbooks(r.Context(), limit, offset)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response.WriteError(w, http.StatusInternalServerError, "internal_server_error", err.Error())
 		return
 	}
 
-	// Return response
-	response := map[string]any{
-		"status": constant.STATUS_SUCCESS,
-		"data":   ebooks,
-	}
-
-	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
-// List handles the HTTP GET request to retrieve a list of ebooks with pagination
-func (h *EbookHandler) List(w http.ResponseWriter, r *http.Request) {
-	// Parse query parameters
-	limitStr := r.URL.Query().Get("limit")
-	offsetStr := r.URL.Query().Get("offset")
-
-	limit := 10 // default limit
-	offset := 0 // default offset
-
-	if limitStr != "" {
-		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
-			limit = l
-		}
-	}
-
-	if offsetStr != "" {
-		if o, err := strconv.Atoi(offsetStr); err == nil && o >= 0 {
-			offset = o
-		}
-	}
-
-	// Get ebooks from usecase
-	ebooks, err := h.ebookUsecase.ListEbooks(r.Context(), limit, offset)
+	// Get total count for pagination
+	total, err := h.ebookUsecase.CountEbooks(r.Context())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response.WriteError(w, http.StatusInternalServerError, "internal_server_error", err.Error())
 		return
 	}
 
 	// Return response
-	response := map[string]any{
-		"status": constant.STATUS_SUCCESS,
-		"data":   ebooks,
-	}
-
-	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	response.WritePaginated(w, ebooks, total, limit, offset)
 }
 
+// GetEbookByID handles the HTTP GET request to retrieve an ebook by its ID
 func (h *EbookHandler) GetEbookByID(w http.ResponseWriter, r *http.Request) {
 	// Extract ID from URL path
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 3 {
-		http.Error(w, constant.INVALID_URL_PATH, http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, "invalid_url_path", constant.INVALID_URL_PATH)
 		return
 	}
 	ebookID := pathParts[2]
 
 	if ebookID == "" {
-		http.Error(w, constant.EBOOK_ID_REQUIRED, http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, "ebook_id_required", constant.EBOOK_ID_REQUIRED)
 		return
 	}
 
 	// Get ebook from usecase
 	ebook, err := h.ebookUsecase.GetEbookByID(r.Context(), ebookID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response.WriteError(w, http.StatusInternalServerError, "internal_server_error", err.Error())
 		return
 	}
 
 	if ebook == nil {
-		http.Error(w, constant.EBOOK_NOT_FOUND, http.StatusNotFound)
+		response.WriteError(w, http.StatusNotFound, "ebook_not_found", constant.EBOOK_NOT_FOUND)
 		return
 	}
 
 	// Return response
-	response := map[string]any{
-		"status": constant.STATUS_SUCCESS,
-		"data":   ebook,
-	}
-
-	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	response.WriteSuccess(w, http.StatusOK, ebook, "")
 }
 
 func (h *EbookHandler) GetEbookBySlug(w http.ResponseWriter, r *http.Request) {
 	// Extract slug from URL path
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 3 {
-		http.Error(w, constant.INVALID_URL_PATH, http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, "invalid_url_path", constant.INVALID_URL_PATH)
 		return
 	}
 	slug := pathParts[2]
 
 	if slug == "" {
-		http.Error(w, "slug is required", http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, "slug_required", "slug is required")
 		return
 	}
 
 	// Get ebook from usecase
 	ebook, err := h.ebookUsecase.GetEbookBySlug(r.Context(), slug)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response.WriteError(w, http.StatusInternalServerError, "internal_server_error", err.Error())
 		return
 	}
 
 	if ebook == nil {
-		http.Error(w, constant.EBOOK_NOT_FOUND, http.StatusNotFound)
+		response.WriteError(w, http.StatusNotFound, "ebook_not_found", constant.EBOOK_NOT_FOUND)
 		return
 	}
 
 	// Return response
-	response := map[string]any{
-		"status": constant.STATUS_SUCCESS,
-		"data":   ebook,
-	}
-
-	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	response.WriteSuccess(w, http.StatusOK, ebook, "")
 }
 
 func (h *EbookHandler) CreateEbook(w http.ResponseWriter, r *http.Request) {
+	// Parse request body
 	var ebook entity.Ebook
-
-	if err := json.NewDecoder(r.Body).Decode(&ebook); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+	err := json.NewDecoder(r.Body).Decode(&ebook)
+	if err != nil {
+		response.WriteError(w, http.StatusBadRequest, "invalid_request_body", err.Error())
 		return
 	}
 
-	// Create ebook using usecase
-	err := h.ebookUsecase.CreateEbook(r.Context(), &ebook)
+	// Validate ebook data
+	if ebook.Title == "" {
+		response.WriteError(w, http.StatusBadRequest, "ebook_title_required", "ebook title is required")
+		return
+	}
+
+	// Create ebook
+	err = h.ebookUsecase.CreateEbook(r.Context(), &ebook)
 	if err != nil {
-		// Check if it's a validation error
-		if err.Error() == "title is required" ||
-			err.Error() == "author_id is required" ||
-			err.Error() == "category_id is required" ||
-			err.Error() == "slug is required" ||
-			err.Error() == "ebook with this slug already exists" {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response.WriteError(w, http.StatusInternalServerError, "internal_server_error", err.Error())
 		return
 	}
 
 	// Return response
-	response := map[string]any{
-		"status":  constant.STATUS_SUCCESS,
-		"message": "ebook created successfully",
-		"data":    ebook,
-	}
-
-	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
-	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	response.WriteSuccess(w, http.StatusCreated, &ebook, "Ebook created successfully")
 }
 
 func (h *EbookHandler) UpdateEbook(w http.ResponseWriter, r *http.Request) {
 	// Extract ID from URL path
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 3 {
-		http.Error(w, constant.INVALID_URL_PATH, http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, "invalid_url_path", constant.INVALID_URL_PATH)
 		return
 	}
 	ebookID := pathParts[2]
 
 	if ebookID == "" {
-		http.Error(w, constant.EBOOK_ID_REQUIRED, http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, "ebook_id_required", constant.EBOOK_ID_REQUIRED)
 		return
 	}
 
+	// Parse request body
 	var ebook entity.Ebook
 	if err := json.NewDecoder(r.Body).Decode(&ebook); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, "invalid_request_body", err.Error())
 		return
 	}
 
-	ebook.ID = ebookID // Ensure the ID is set from URL
+	// Set the ID from the URL
+	ebook.ID = ebookID
 
-	// Update ebook using usecase
+	// Update ebook
 	err := h.ebookUsecase.UpdateEbook(r.Context(), &ebook)
 	if err != nil {
-		// Check if it's a validation error
-		if err.Error() == "id is required" ||
-			err.Error() == "ebook not found" ||
-			err.Error() == "ebook with this slug already exists" {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response.WriteError(w, http.StatusInternalServerError, "internal_server_error", err.Error())
 		return
 	}
 
 	// Return response
-	response := map[string]any{
-		"status":  constant.STATUS_SUCCESS,
-		"message": "ebook updated successfully",
-		"data":    ebook,
-	}
-
-	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	response.WriteSuccess(w, http.StatusOK, &ebook, "Ebook updated successfully")
 }
 
 func (h *EbookHandler) DeleteEbook(w http.ResponseWriter, r *http.Request) {
 	// Extract ID from URL path
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 3 {
-		http.Error(w, "invalid URL path", http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, "invalid_url_path", constant.INVALID_URL_PATH)
 		return
 	}
 	ebookID := pathParts[2]
 
 	if ebookID == "" {
-		http.Error(w, constant.EBOOK_ID_REQUIRED, http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, "ebook_id_required", constant.EBOOK_ID_REQUIRED)
 		return
 	}
 
@@ -294,77 +185,46 @@ func (h *EbookHandler) DeleteEbook(w http.ResponseWriter, r *http.Request) {
 		// Check if it's a validation error
 		if err.Error() == "id is required" ||
 			err.Error() == "ebook not found" {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			response.WriteError(w, http.StatusBadRequest, "validation_error", err.Error())
 			return
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response.WriteError(w, http.StatusInternalServerError, "internal_server_error", err.Error())
 		return
 	}
 
 	// Return response
-	response := map[string]any{
-		"status":  constant.STATUS_SUCCESS,
-		"message": "ebook deleted successfully",
-	}
-
-	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	response.WriteSuccess(w, http.StatusOK, nil, "Ebook deleted successfully")
 }
 
 func (h *EbookHandler) ListEbooksByCategory(w http.ResponseWriter, r *http.Request) {
 	// Extract category ID from URL path
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 4 {
-		http.Error(w, constant.INVALID_URL_PATH, http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, "invalid_url_path", constant.INVALID_URL_PATH)
 		return
 	}
 	categoryID := pathParts[3]
 
 	if categoryID == "" {
-		http.Error(w, constant.CATEGORY_ID_REQUIRED, http.StatusBadRequest)
+		response.WriteError(w, http.StatusBadRequest, "category_id_required", constant.CATEGORY_ID_REQUIRED)
+		return
+	}
+	limit, offset := helper.HandlePagination(r)
+
+	// Get ebooks from usecase
+	ebooks, err := h.ebookUsecase.ListEbooksByCategory(r.Context(), categoryID, limit, offset)
+	if err != nil {
+		response.WriteError(w, http.StatusInternalServerError, "internal_server_error", err.Error())
 		return
 	}
 
-	// Parse query parameters
-	limitStr := r.URL.Query().Get("limit")
-	offsetStr := r.URL.Query().Get("offset")
-
-	limit := 10 // default limit
-	offset := 0 // default offset
-
-	if limitStr != "" {
-		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
-			limit = l
-		}
-	}
-
-	if offsetStr != "" {
-		if o, err := strconv.Atoi(offsetStr); err == nil && o >= 0 {
-			offset = o
-		}
-	}
-
-	// Get ebooks by category from usecase
-	ebooks, err := h.ebookUsecase.ListEbooksByCategory(r.Context(), categoryID, limit, offset)
+	// Get total count for pagination
+	total, err := h.ebookUsecase.CountEbooksByCategory(r.Context(), categoryID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		response.WriteError(w, http.StatusInternalServerError, "internal_server_error", err.Error())
 		return
 	}
 
 	// Return response
-	response := map[string]any{
-		"status": constant.STATUS_SUCCESS,
-		"data":   ebooks,
-	}
-
-	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	response.WritePaginated(w, ebooks, total, limit, offset)
 }

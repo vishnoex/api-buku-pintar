@@ -19,7 +19,7 @@ func NewContentStatusRepository(db *sql.DB) repository.ContentStatusRepository {
 func (r *contentStatusRepository) Create(ctx context.Context, contentStatus *entity.ContentStatus) error {
 	query := `INSERT INTO content_statuses (id, name, created_at, updated_at) 
 		VALUES (?, ?, ?, ?)`
-	
+
 	now := time.Now()
 	contentStatus.CreatedAt = now
 	contentStatus.UpdatedAt = now
@@ -36,7 +36,7 @@ func (r *contentStatusRepository) Create(ctx context.Context, contentStatus *ent
 func (r *contentStatusRepository) GetByID(ctx context.Context, id string) (*entity.ContentStatus, error) {
 	query := `SELECT id, name, created_at, updated_at 
 		FROM content_statuses WHERE id = ?`
-	
+
 	contentStatus := &entity.ContentStatus{}
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&contentStatus.ID,
@@ -57,7 +57,7 @@ func (r *contentStatusRepository) GetByID(ctx context.Context, id string) (*enti
 func (r *contentStatusRepository) GetByName(ctx context.Context, name string) (*entity.ContentStatus, error) {
 	query := `SELECT id, name, created_at, updated_at 
 		FROM content_statuses WHERE name = ?`
-	
+
 	contentStatus := &entity.ContentStatus{}
 	err := r.db.QueryRowContext(ctx, query, name).Scan(
 		&contentStatus.ID,
@@ -79,9 +79,9 @@ func (r *contentStatusRepository) Update(ctx context.Context, contentStatus *ent
 	query := `UPDATE content_statuses 
 		SET name = ?, updated_at = ?
 		WHERE id = ?`
-	
+
 	contentStatus.UpdatedAt = time.Now()
-	
+
 	_, err := r.db.ExecContext(ctx, query,
 		contentStatus.Name,
 		contentStatus.UpdatedAt,
@@ -109,7 +109,7 @@ func (r *contentStatusRepository) List(ctx context.Context, limit, offset int) (
 	var contentStatuses []*entity.ContentStatus
 	for rows.Next() {
 		contentStatus := &entity.ContentStatus{}
-		err := rows.Scan(
+		err = rows.Scan(
 			&contentStatus.ID,
 			&contentStatus.Name,
 			&contentStatus.CreatedAt,

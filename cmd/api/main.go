@@ -62,7 +62,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Initialize dependencies
+	// Initialize category dependencies
+	categoryRepo := mysql.NewCategoryRepository(db)
+	categoryUsecase := usecase.NewCategoryUsecase(categoryRepo)
+	categoryHandler := http.NewCategoryHandler(categoryUsecase)
+
+	// Initialize user dependencies
 	userRepo := mysql.NewUserRepository(db)
 	userService := service.NewUserService(userRepo, fb.Auth())
 	userUsecase := usecase.NewUserUsecase(userRepo, userService)
@@ -83,7 +88,7 @@ func main() {
 	ebookHandler := http.NewEbookHandler(ebookUsecase)
 
 	// Initialize router
-	router := http.NewRouter(ebookHandler, userHandler, paymentHandler, authMiddleware)
+	router := http.NewRouter(categoryHandler, ebookHandler, userHandler, paymentHandler, authMiddleware)
 	mux := router.SetupRoutes()
 
 	// Start server

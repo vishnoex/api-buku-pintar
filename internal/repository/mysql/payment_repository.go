@@ -19,7 +19,7 @@ func NewPaymentRepository(db *sql.DB) repository.PaymentRepository {
 func (r *paymentRepository) Create(ctx context.Context, payment *entity.Payment) error {
 	query := `INSERT INTO payments (id, user_id, amount, currency, status, xendit_reference, description, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	
+
 	now := time.Now()
 	payment.CreatedAt = now
 	payment.UpdatedAt = now
@@ -41,7 +41,7 @@ func (r *paymentRepository) Create(ctx context.Context, payment *entity.Payment)
 func (r *paymentRepository) GetByID(ctx context.Context, id string) (*entity.Payment, error) {
 	query := `SELECT id, user_id, amount, currency, status, xendit_reference, description, created_at, updated_at
 		FROM payments WHERE id = ?`
-	
+
 	payment := &entity.Payment{}
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&payment.ID,
@@ -92,9 +92,9 @@ func (r *paymentRepository) Update(ctx context.Context, payment *entity.Payment)
 	query := `UPDATE payments
 		SET user_id = ?, amount = ?, currency = ?, status = ?, xendit_reference = ?, description = ?, updated_at = ?
 		WHERE id = ?`
-	
+
 	payment.UpdatedAt = time.Now()
-	
+
 	_, err := r.db.ExecContext(ctx, query,
 		payment.UserID,
 		payment.Amount,
@@ -121,7 +121,7 @@ func (r *paymentRepository) ListByUserID(ctx context.Context, userID string) ([]
 	var payments []*entity.Payment
 	for rows.Next() {
 		payment := &entity.Payment{}
-		err := rows.Scan(
+		err = rows.Scan(
 			&payment.ID,
 			&payment.UserID,
 			&payment.Amount,

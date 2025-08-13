@@ -19,7 +19,7 @@ func NewInspirationRepository(db *sql.DB) repository.InspirationRepository {
 func (r *inspirationRepository) Create(ctx context.Context, inspiration *entity.Inspiration) error {
 	query := `INSERT INTO inspirations (id, author_id, title, content, slug, excerpt, cover_image, category_id, content_status_id, reading_time, published_at, created_at, updated_at) 
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-	
+
 	now := time.Now()
 	inspiration.CreatedAt = now
 	inspiration.UpdatedAt = now
@@ -45,7 +45,7 @@ func (r *inspirationRepository) Create(ctx context.Context, inspiration *entity.
 func (r *inspirationRepository) GetByID(ctx context.Context, id string) (*entity.Inspiration, error) {
 	query := `SELECT id, author_id, title, content, slug, excerpt, cover_image, category_id, content_status_id, reading_time, published_at, created_at, updated_at 
 		FROM inspirations WHERE id = ?`
-	
+
 	inspiration := &entity.Inspiration{}
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&inspiration.ID,
@@ -75,7 +75,7 @@ func (r *inspirationRepository) GetByID(ctx context.Context, id string) (*entity
 func (r *inspirationRepository) GetBySlug(ctx context.Context, slug string) (*entity.Inspiration, error) {
 	query := `SELECT id, author_id, title, content, slug, excerpt, cover_image, category_id, content_status_id, reading_time, published_at, created_at, updated_at 
 		FROM inspirations WHERE slug = ?`
-	
+
 	inspiration := &entity.Inspiration{}
 	err := r.db.QueryRowContext(ctx, query, slug).Scan(
 		&inspiration.ID,
@@ -106,9 +106,9 @@ func (r *inspirationRepository) Update(ctx context.Context, inspiration *entity.
 	query := `UPDATE inspirations 
 		SET author_id = ?, title = ?, content = ?, slug = ?, excerpt = ?, cover_image = ?, category_id = ?, content_status_id = ?, reading_time = ?, published_at = ?, updated_at = ?
 		WHERE id = ?`
-	
+
 	inspiration.UpdatedAt = time.Now()
-	
+
 	_, err := r.db.ExecContext(ctx, query,
 		inspiration.AuthorID,
 		inspiration.Title,
@@ -145,7 +145,7 @@ func (r *inspirationRepository) List(ctx context.Context, limit, offset int) ([]
 	var inspirations []*entity.Inspiration
 	for rows.Next() {
 		inspiration := &entity.Inspiration{}
-		err := rows.Scan(
+		err = rows.Scan(
 			&inspiration.ID,
 			&inspiration.AuthorID,
 			&inspiration.Title,
@@ -186,7 +186,7 @@ func (r *inspirationRepository) ListByAuthor(ctx context.Context, authorID strin
 	var inspirations []*entity.Inspiration
 	for rows.Next() {
 		inspiration := &entity.Inspiration{}
-		err := rows.Scan(
+		err = rows.Scan(
 			&inspiration.ID,
 			&inspiration.AuthorID,
 			&inspiration.Title,
@@ -227,7 +227,7 @@ func (r *inspirationRepository) ListByCategory(ctx context.Context, categoryID s
 	var inspirations []*entity.Inspiration
 	for rows.Next() {
 		inspiration := &entity.Inspiration{}
-		err := rows.Scan(
+		err = rows.Scan(
 			&inspiration.ID,
 			&inspiration.AuthorID,
 			&inspiration.Title,
@@ -268,7 +268,7 @@ func (r *inspirationRepository) ListPublished(ctx context.Context, limit, offset
 	var inspirations []*entity.Inspiration
 	for rows.Next() {
 		inspiration := &entity.Inspiration{}
-		err := rows.Scan(
+		err = rows.Scan(
 			&inspiration.ID,
 			&inspiration.AuthorID,
 			&inspiration.Title,
