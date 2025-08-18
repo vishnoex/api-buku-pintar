@@ -8,8 +8,8 @@ on:
 env:
   AWS_REGION: ap-southeast-1
   ECR_REPOSITORY: buku-pintar-api
-  LIGHTSAIL_INSTANCE: vishnoex-2gb
-  CONTAINER_PORT: 8080
+  LIGHTSAIL_INSTANCE: ${{ secrets.INSTANCE_NAME }}
+  CONTAINER_PORT: ${{ secrets.CONTAINER_PORT }}
 
 jobs:
   deploy:
