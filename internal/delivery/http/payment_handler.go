@@ -1,6 +1,7 @@
 package http
 
 import (
+	"buku-pintar/internal/constant"
 	"buku-pintar/internal/usecase"
 	"encoding/json"
 	"net/http"
@@ -25,7 +26,7 @@ type InitiatePaymentRequest struct {
 
 func (h *PaymentHandler) InitiatePayment(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, constant.ERR_METHOD_NOT_ALLOWED, http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -43,14 +44,14 @@ func (h *PaymentHandler) InitiatePayment(w http.ResponseWriter, r *http.Request)
 
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(payment); err != nil {
-		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		http.Error(w, constant.ERR_ENCODING_RESP, http.StatusInternalServerError)
 		return
 	}
 }
 
 func (h *PaymentHandler) HandleXenditCallback(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, constant.ERR_METHOD_NOT_ALLOWED, http.StatusMethodNotAllowed)
 		return
 	}
 

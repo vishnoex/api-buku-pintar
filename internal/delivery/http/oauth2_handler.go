@@ -1,6 +1,7 @@
 package http
 
 import (
+	"buku-pintar/internal/constant"
 	"buku-pintar/internal/domain/entity"
 	"buku-pintar/internal/usecase"
 	"buku-pintar/pkg/oauth2"
@@ -65,7 +66,7 @@ func generateState() (string, error) {
 // Login initiates OAuth2 login flow
 func (h *OAuth2Handler) Login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, constant.ERR_METHOD_NOT_ALLOWED, http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -103,10 +104,10 @@ func (h *OAuth2Handler) Login(w http.ResponseWriter, r *http.Request) {
 		State:   state,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		http.Error(w, constant.ERR_ENCODING_RESP, http.StatusInternalServerError)
 		return
 	}
 }
@@ -114,7 +115,7 @@ func (h *OAuth2Handler) Login(w http.ResponseWriter, r *http.Request) {
 // Callback handles OAuth2 callback and user authentication
 func (h *OAuth2Handler) Callback(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, constant.ERR_METHOD_NOT_ALLOWED, http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -204,10 +205,10 @@ func (h *OAuth2Handler) Callback(w http.ResponseWriter, r *http.Request) {
 		User:        user,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		http.Error(w, constant.ERR_ENCODING_RESP, http.StatusInternalServerError)
 		return
 	}
 }
@@ -215,7 +216,7 @@ func (h *OAuth2Handler) Callback(w http.ResponseWriter, r *http.Request) {
 // GetProviders returns available OAuth2 providers
 func (h *OAuth2Handler) GetProviders(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, constant.ERR_METHOD_NOT_ALLOWED, http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -234,10 +235,10 @@ func (h *OAuth2Handler) GetProviders(w http.ResponseWriter, r *http.Request) {
 		"providers": providers,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		http.Error(w, constant.ERR_ENCODING_RESP, http.StatusInternalServerError)
 		return
 	}
 }
@@ -245,7 +246,7 @@ func (h *OAuth2Handler) GetProviders(w http.ResponseWriter, r *http.Request) {
 // HandleOAuth2Redirect handles the redirect from OAuth2 provider
 func (h *OAuth2Handler) HandleOAuth2Redirect(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		http.Error(w, constant.ERR_METHOD_NOT_ALLOWED, http.StatusMethodNotAllowed)
 		return
 	}
 

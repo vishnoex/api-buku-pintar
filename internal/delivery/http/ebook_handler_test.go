@@ -1,6 +1,7 @@
 package http
 
 import (
+	"buku-pintar/internal/constant"
 	"buku-pintar/internal/delivery/http/response"
 	"buku-pintar/internal/domain/entity"
 	"bytes"
@@ -376,7 +377,7 @@ func TestEbookHandler_CreateEbook(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
 
 			// Create response recorder
 			rr := httptest.NewRecorder()
@@ -619,7 +620,7 @@ func TestEbookHandler_UpdateEbook(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			req.Header.Set("Content-Type", "application/json")
+			req.Header.Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
 
 			// Create response recorder
 			rr := httptest.NewRecorder()

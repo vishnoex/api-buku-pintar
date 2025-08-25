@@ -6,6 +6,7 @@ const (
 	EBOOK_NOT_FOUND      string = "ebook not found"
 	CATEGORY_ID_REQUIRED string = "category ID is required"
 
-	ERR_CODE_SERVER_ERROR string = "internal_server_error"
-	ERR_ENCODING_RESP     string = "Error encoding response"
+	ERR_CODE_SERVER_ERROR  string = "internal_server_error"
+	ERR_ENCODING_RESP      string = "Error encoding response"
+	ERR_METHOD_NOT_ALLOWED string = "Method not allowed"
 )
