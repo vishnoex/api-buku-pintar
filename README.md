@@ -1,6 +1,6 @@
 # Buku Pintar API
 
-A RESTful API service for Buku Pintar application built with Go, following Clean Architecture principles and SOLID design patterns.
+A RESTful API service for Buku Pintar application built with Go, following Clean Architecture principles and SOLID design patterns. The API supports both Firebase Authentication and OAuth2 for multiple providers (Google, GitHub, Facebook).
 
 ## Project Structure
 
@@ -22,7 +22,8 @@ A RESTful API service for Buku Pintar application built with Go, following Clean
 │          └── response/  # HTTP response models
 ├── pkg/                   # Public packages
 │   ├── config/           # Configuration management
-│   └── firebase/         # Firebase integration
+│   ├── firebase/         # Firebase integration
+│   └── oauth2/           # OAuth2 service
 ├── migrations/            # Database migrations
 ├── config.json           # Application configuration
 ├── firebase-credentials.json  # Firebase service account credentials
@@ -33,11 +34,12 @@ A RESTful API service for Buku Pintar application built with Go, following Clean
 
 ## Prerequisites
 
-- Go 1.21 or higher
+- Go 1.23 or higher
 - Docker and Docker Compose
 - MySQL 8.0
 - Firebase project
 - Xendit account (for payment processing)
+- OAuth2 provider accounts (Google, GitHub, Facebook)
 
 ## Configuration
 
@@ -64,6 +66,23 @@ The application uses a JSON configuration file (`config.json`) for all settings:
     "app": {
         "port": "8080",
         "environment": "local"
+    },
+    "oauth2": {
+        "google": {
+            "client_id": "your_google_client_id",
+            "client_secret": "your_google_client_secret",
+            "redirect_url": "http://localhost:8080/oauth2/google/redirect"
+        },
+        "github": {
+            "client_id": "your_github_client_id",
+            "client_secret": "your_github_client_secret",
+            "redirect_url": "http://localhost:8080/oauth2/github/redirect"
+        },
+        "facebook": {
+            "client_id": "your_facebook_client_id",
+            "client_secret": "your_facebook_client_secret",
+            "redirect_url": "http://localhost:8080/oauth2/facebook/redirect"
+        }
     }
 }
 ```
@@ -75,6 +94,38 @@ The application uses a JSON configuration file (`config.json`) for all settings:
 3. Go to Project Settings > Service Accounts
 4. Click "Generate New Private Key" to download your service account credentials
 5. Save the downloaded JSON file as `firebase-credentials.json` in the project root
+
+## OAuth2 Setup
+
+### Google OAuth2 Setup
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select an existing one
+3. Enable the Google+ API
+4. Go to Credentials > Create Credentials > OAuth 2.0 Client IDs
+5. Configure the OAuth consent screen
+6. Set application type to "Web application"
+7. Add authorized redirect URIs (e.g., `http://localhost:8080/oauth2/google/redirect`)
+8. Copy the Client ID and Client Secret to your `config.json`
+
+### GitHub OAuth2 Setup
+
+1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
+2. Click "New OAuth App"
+3. Fill in the application details:
+   - Application name: Your app name
+   - Homepage URL: Your app homepage
+   - Authorization callback URL: `http://localhost:8080/oauth2/github/redirect`
+4. Click "Register application"
+5. Copy the Client ID and Client Secret to your `config.json`
+
+### Facebook OAuth2 Setup
+
+1. Go to [Facebook Developers](https://developers.facebook.com/)
+2. Create a new app or select an existing one
+3. Go to Facebook Login > Settings
+4. Add your OAuth redirect URI: `http://localhost:8080/oauth2/facebook/redirect`
+5. Copy the App ID and App Secret to your `config.json`
 
 ## Xendit Setup
 
@@ -119,12 +170,60 @@ go run cmd/api/main.go
 - `POST /users/register` - Register a new user
 - `POST /payments/callback` - Xendit payment status callback
 
-### Protected Endpoints (Requires Firebase Authentication)
+### OAuth2 Endpoints
+
+- `POST /oauth2/login` - Initiate OAuth2 login flow
+- `POST /oauth2/callback` - Handle OAuth2 callback
+- `GET /oauth2/providers` - Get available OAuth2 providers
+- `GET /oauth2/{provider}/redirect` - Handle OAuth2 provider redirect
+
+### Protected Endpoints (Requires Firebase or OAuth2 Authentication)
 
 - `GET /users` - Get user profile
 - `PUT /users/update` - Update user profile
 - `DELETE /users/delete` - Delete user account
 - `POST /payments/initiate` - Initiate a new payment
+
+## OAuth2 Authentication Flow
+
+### 1. Initiate OAuth2 Login
+
+```bash
+POST /oauth2/login
+Content-Type: application/json
+
+{
+    "provider": "google"
+}
+```
+
+Response:
+```json
+{
+    "auth_url": "https://accounts.google.com/oauth2/authorize?...",
+    "state": "random_state_string"
+}
+```
+
+### 2. User Authorization
+
+The user is redirected to the OAuth2 provider's authorization page where they grant permissions.
+
+### 3. OAuth2 Callback
+
+The provider redirects back to your application with an authorization code:
+
+```
+GET /oauth2/google/redirect?code=AUTHORIZATION_CODE&state=STATE
+```
+
+### 4. Token Exchange
+
+The application exchanges the authorization code for an access token and retrieves user information.
+
+### 5. User Registration/Login
+
+If the user doesn't exist, they are automatically registered. If they exist, they are logged in.
 
 ## Payment Integration
 
@@ -134,7 +233,7 @@ The API integrates with Xendit for payment processing. The payment flow works as
 
 ```bash
 POST /payments/initiate
-Authorization: Bearer <firebase_id_token>
+Authorization: Bearer <firebase_id_token_or_oauth2_token>
 Content-Type: application/json
 
 {
@@ -184,12 +283,23 @@ Content-Type: application/json
 
 ## Authentication
 
-The API uses Firebase Authentication. To access protected endpoints:
+The API supports multiple authentication methods:
 
-1. Include the Firebase ID token in the Authorization header:
+### Firebase Authentication
+
+Include the Firebase ID token in the Authorization header:
 ```
 Authorization: Bearer <firebase_id_token>
 ```
+
+### OAuth2 Authentication
+
+Include the OAuth2 access token in the Authorization header:
+```
+Authorization: Bearer <oauth2_access_token>
+```
+
+The middleware automatically detects the token type and validates it accordingly.
 
 ## Database Schema
 
@@ -232,24 +342,28 @@ CREATE TABLE payments (
 - Repository interfaces and implementations are separated
 - Use cases handle specific business operations
 - Payment service handles only payment-related business logic
+- OAuth2 service handles only OAuth2 authentication flows
 
 ### Open/Closed Principle (OCP)
 - Repository interfaces allow for different implementations without modifying existing code
 - Service interfaces enable extending functionality through new implementations
 - Middleware system allows adding new authentication methods without changing existing code
 - Payment gateway integration can be extended to support other providers
+- OAuth2 service can be extended to support additional providers
 
 ### Liskov Substitution Principle (LSP)
 - Repository implementations are interchangeable as long as they satisfy the interface
 - Service implementations can be swapped without affecting the rest of the system
 - HTTP handlers can be replaced with different implementations while maintaining the same contract
 - Payment service implementations can be swapped for different payment gateways
+- OAuth2 providers can be swapped without affecting the authentication flow
 
 ### Interface Segregation Principle (ISP)
 - Small, focused interfaces for repositories and services
 - Separate interfaces for different types of operations
 - Clients only depend on the interfaces they use
 - Payment repository and service interfaces are focused on payment operations
+- OAuth2 service interface is focused on OAuth2 operations
 
 ### Dependency Inversion Principle (DIP)
 - High-level modules (use cases) depend on abstractions
@@ -257,6 +371,7 @@ CREATE TABLE payments (
 - Dependencies are injected through constructors
 - Easy to swap implementations for testing or different environments
 - Payment use cases depend on payment service abstractions
+- OAuth2 handlers depend on OAuth2 service abstractions
 
 ## Clean Architecture
 
@@ -268,6 +383,7 @@ The project follows Clean Architecture principles with distinct layers:
 - Includes entities, repository interfaces, and service interfaces
 - No dependencies on external frameworks
 - Payment entity and interfaces are domain-driven
+- OAuth2 provider types are domain-driven
 
 ### 2. Use Case Layer (Application Business Rules)
 - Implements application-specific business rules
@@ -275,6 +391,7 @@ The project follows Clean Architecture principles with distinct layers:
 - Depends only on the domain layer
 - Contains use case implementations
 - Payment use cases handle payment flow orchestration
+- OAuth2 use cases handle authentication flow orchestration
 
 ### 3. Interface Adapters Layer
 - Converts data between the format most convenient for use cases and entities
@@ -282,12 +399,14 @@ The project follows Clean Architecture principles with distinct layers:
 - Implements repository interfaces
 - Handles HTTP requests and responses
 - Payment handlers adapt HTTP requests to use cases
+- OAuth2 handlers adapt HTTP requests to use cases
 
 ### 4. Frameworks & Drivers Layer
 - Contains frameworks and tools like the database, web framework, etc.
 - All frameworks are kept in this layer
 - Communicates with the interface adapters layer
 - Xendit SDK integration is isolated in this layer
+- OAuth2 provider SDKs are isolated in this layer
 
 ## Testing
 
@@ -303,6 +422,16 @@ go test ./...
 3. Commit your changes
 4. Push to the branch
 5. Create a new Pull Request
+
+## OAuth2 Integration Notes
+
+- The OAuth2 integration supports Google, GitHub, and Facebook providers
+- OAuth2 tokens are validated with the respective providers
+- User information is automatically synchronized between OAuth2 providers and the local database
+- The system supports both Firebase and OAuth2 authentication simultaneously
+- OAuth2 redirect URLs must be configured in both the application and provider settings
+- State parameters are used to prevent CSRF attacks
+- Access tokens are returned to the client for subsequent API calls
 
 ## Payment Integration Notes
 

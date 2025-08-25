@@ -11,6 +11,7 @@ type Router struct {
 	ebookHandler    *EbookHandler
 	userHandler     *UserHandler
 	paymentHandler  *PaymentHandler
+	oauth2Handler   *OAuth2Handler
 	authMiddleware  *middleware.AuthMiddleware
 }
 
@@ -20,6 +21,7 @@ func NewRouter(
 	ebookHandler *EbookHandler,
 	userHandler *UserHandler,
 	paymentHandler *PaymentHandler,
+	oauth2Handler *OAuth2Handler,
 	authMiddleware *middleware.AuthMiddleware,
 ) *Router {
 	return &Router{
@@ -27,6 +29,7 @@ func NewRouter(
 		ebookHandler:    ebookHandler,
 		userHandler:     userHandler,
 		paymentHandler:  paymentHandler,
+		oauth2Handler:   oauth2Handler,
 		authMiddleware:  authMiddleware,
 	}
 }
@@ -41,6 +44,12 @@ func (r *Router) SetupRoutes() *http.ServeMux {
 	// Ebook routes
 	mux.HandleFunc("/ebooks", r.ebookHandler.ListEbooks)
 	mux.HandleFunc("/ebooks/{id}", r.ebookHandler.GetEbookByID)
+
+	// OAuth2 routes
+	mux.HandleFunc("/oauth2/login", r.oauth2Handler.Login)
+	mux.HandleFunc("/oauth2/callback", r.oauth2Handler.Callback)
+	mux.HandleFunc("/oauth2/providers", r.oauth2Handler.GetProviders)
+	mux.HandleFunc("/oauth2/{provider}/redirect", r.oauth2Handler.HandleOAuth2Redirect)
 
 	// Public routes
 	mux.HandleFunc("/users/register", r.userHandler.Register)

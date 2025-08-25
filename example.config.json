@@ -4,27 +4,44 @@
     },
     "payment": {
         "xendit": {
-            "key": "xnd_development_credentials"
+            "key": "your_xendit_api_key"
         }
     },
     "database": {
-        "host": "host_url",
-        "port": "port_number",
-        "user": "username",
-        "password": "password",
-        "name": "db_name",
-        "params": "parameters"
+        "host": "mysql-8",
+        "port": "3306",
+        "user": "root",
+        "password": "bukanpassword",
+        "name": "bukupintar",
+        "params": "parseTime=true"
     },
     "database_local": {
-        "host": "host_url",
-        "port": "port_number",
-        "user": "username",
-        "password": "password",
-        "name": "db_name",
-        "params": "parameters"
+        "host": "localhost",
+        "port": "3306",
+        "user": "root",
+        "password": "your_local_password",
+        "name": "bukupintar",
+        "params": "parseTime=true"
     },
     "app": {
-        "port": "port_number",
+        "port": "8080",
         "environment": "local"
+    },
+    "oauth2": {
+        "google": {
+            "client_id": "your_google_client_id",
+            "client_secret": "your_google_client_secret",
+            "redirect_url": "http://localhost:8080/oauth2/google/redirect"
+        },
+        "github": {
+            "client_id": "your_github_client_id",
+            "client_secret": "your_github_client_secret",
+            "redirect_url": "http://localhost:8080/oauth2/github/redirect"
+        },
+        "facebook": {
+            "client_id": "your_facebook_client_id",
+            "client_secret": "your_facebook_client_secret",
+            "redirect_url": "http://localhost:8080/oauth2/facebook/redirect"
+        }
     }
 } 

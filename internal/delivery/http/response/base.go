@@ -67,11 +67,11 @@ func NewPaginatedResponse(data any, total int64, limit, offset int) *Response {
 func WriteError(w http.ResponseWriter, statusCode int, errorCode, errorMessage string) {
 	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
 	w.Header().Set(constant.ACCESS_CONTROL_ALLOW_ORIGIN, "*")
-	w.Header().Set(constant.ACCESS_CONTROL_ALLOW_HEADER, "Content-Type")
+	w.Header().Set(constant.ACCESS_CONTROL_ALLOW_HEADER, constant.CONTENT_TYPE)
 	w.WriteHeader(statusCode)
 	resp := NewErrorResponse(errorCode, errorMessage)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		http.Error(w, constant.ERR_ENCODING_RESP, http.StatusInternalServerError)
 		return
 	}
 }
@@ -80,11 +80,11 @@ func WriteError(w http.ResponseWriter, statusCode int, errorCode, errorMessage s
 func WriteSuccess(w http.ResponseWriter, statusCode int, data any, message string) {
 	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
 	w.Header().Set(constant.ACCESS_CONTROL_ALLOW_ORIGIN, "*")
-	w.Header().Set(constant.ACCESS_CONTROL_ALLOW_HEADER, "Content-Type")
+	w.Header().Set(constant.ACCESS_CONTROL_ALLOW_HEADER, constant.CONTENT_TYPE)
 	w.WriteHeader(statusCode)
 	resp := NewSuccessResponse(data, message)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		http.Error(w, constant.ERR_ENCODING_RESP, http.StatusInternalServerError)
 		return
 	}
 }
@@ -94,11 +94,11 @@ func WritePaginated(w http.ResponseWriter, data any, total int64, limit, offset 
 	w.Header().Set(constant.CONTENT_TYPE, constant.APPLICATION_JSON)
 	w.Header().Set(constant.ACCESS_CONTROL_ALLOW_ORIGIN, "*")
 	w.Header().Set(constant.ACCESS_CONTROL_ALLOW_METHOD, "GET")
-	w.Header().Set(constant.ACCESS_CONTROL_ALLOW_HEADER, "Content-Type")
+	w.Header().Set(constant.ACCESS_CONTROL_ALLOW_HEADER, constant.CONTENT_TYPE)
 	w.WriteHeader(http.StatusOK)
 	resp := NewPaginatedResponse(data, total, limit, offset)
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, "Error encoding response", http.StatusInternalServerError)
+		http.Error(w, constant.ERR_ENCODING_RESP, http.StatusInternalServerError)
 		return
 	}
 }

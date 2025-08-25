@@ -4,6 +4,7 @@ import (
 	"buku-pintar/internal/domain/entity"
 	"buku-pintar/internal/domain/repository"
 	"buku-pintar/internal/domain/service"
+	"buku-pintar/pkg/oauth2"
 	"context"
 	"errors"
 )
@@ -37,6 +38,20 @@ func (u *userUsecase) Register(ctx context.Context, user *entity.User) error {
 
 func (u *userUsecase) RegisterWithFirebase(ctx context.Context, user *entity.User, idToken string) error {
 	return u.userService.RegisterWithFirebase(ctx, user, idToken)
+}
+
+func (u *userUsecase) RegisterWithOAuth2(ctx context.Context, user *entity.User, provider oauth2.Provider) error {
+	// Check if user already exists
+	existingUser, err := u.userRepo.GetByEmail(ctx, user.Email)
+	if err != nil {
+		return err
+	}
+	if existingUser != nil {
+		return errors.New("user already exists")
+	}
+
+	// Use service for business logic
+	return u.userService.RegisterWithOAuth2(ctx, user, provider)
 }
 
 func (u *userUsecase) GetUserByID(ctx context.Context, id string) (*entity.User, error) {

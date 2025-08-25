@@ -2,7 +2,9 @@ package middleware
 
 import (
 	"buku-pintar/internal/domain/entity"
+	"buku-pintar/pkg/oauth2"
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -26,11 +28,13 @@ const (
 
 type AuthMiddleware struct {
 	firebaseAuth *auth.Client
+	oauth2Service *oauth2.OAuth2Service
 }
 
-func NewAuthMiddleware(firebaseAuth *auth.Client) *AuthMiddleware {
+func NewAuthMiddleware(firebaseAuth *auth.Client, oauth2Service *oauth2.OAuth2Service) *AuthMiddleware {
 	return &AuthMiddleware{
 		firebaseAuth: firebaseAuth,
+		oauth2Service: oauth2Service,
 	}
 }
 
@@ -44,32 +48,66 @@ func (m *AuthMiddleware) Authenticate(next http.Handler) http.Handler {
 		}
 
 		// Check if the header has the Bearer prefix
-		idToken := strings.TrimPrefix(authHeader, "Bearer ")
-		if idToken == authHeader {
+		token := strings.TrimPrefix(authHeader, "Bearer ")
+		if token == authHeader {
 			http.Error(w, "Invalid authorization header format", http.StatusUnauthorized)
 			return
 		}
 
-		// Verify the ID token
-		token, err := m.firebaseAuth.VerifyIDToken(r.Context(), idToken)
-		if err != nil {
-			http.Error(w, "Invalid ID token", http.StatusUnauthorized)
+		// Try Firebase authentication first
+		user, err := m.authenticateWithFirebase(r.Context(), token)
+		if err == nil && user != nil {
+			// Firebase authentication successful
+			ctx := context.WithValue(r.Context(), UserContextKey, user)
+			next.ServeHTTP(w, r.WithContext(ctx))
 			return
 		}
 
-		// Create user context
-		user := &entity.User{
-			ID:     token.UID, // Use Firebase UID as the user ID
-			Email:  token.Claims[string(EmailClaim)].(string),
-			Name:   token.Claims[string(NameClaim)].(string),
-			Role:   entity.RoleReader, // Default role
-			Status: entity.StatusActive, // Default status
+		// Try OAuth2 token validation
+		user, err = m.authenticateWithOAuth2(r.Context(), token)
+		if err == nil && user != nil {
+			// OAuth2 authentication successful
+			ctx := context.WithValue(r.Context(), UserContextKey, user)
+			next.ServeHTTP(w, r.WithContext(ctx))
+			return
 		}
 
-		// Add user to context
-		ctx := context.WithValue(r.Context(), UserContextKey, user)
-		next.ServeHTTP(w, r.WithContext(ctx))
+		// Both authentication methods failed
+		http.Error(w, "Invalid authentication token", http.StatusUnauthorized)
 	})
+}
+
+// authenticateWithFirebase attempts to authenticate using Firebase
+func (m *AuthMiddleware) authenticateWithFirebase(ctx context.Context, idToken string) (*entity.User, error) {
+	// Verify the ID token
+	token, err := m.firebaseAuth.VerifyIDToken(ctx, idToken)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create user context
+	user := &entity.User{
+		ID:     token.UID, // Use Firebase UID as the user ID
+		Email:  token.Claims[string(EmailClaim)].(string),
+		Name:   token.Claims[string(NameClaim)].(string),
+		Role:   entity.RoleReader, // Default role
+		Status: entity.StatusActive, // Default status
+	}
+
+	return user, nil
+}
+
+// authenticateWithOAuth2 attempts to authenticate using OAuth2 token
+func (m *AuthMiddleware) authenticateWithOAuth2(ctx context.Context, accessToken string) (*entity.User, error) {
+	// For OAuth2, we would typically validate the token with the provider
+	// and retrieve user information. For now, we'll return nil as this
+	// would require additional implementation to validate OAuth2 tokens.
+	// In a production environment, you might want to:
+	// 1. Store OAuth2 tokens in a secure way
+	// 2. Validate tokens with the respective providers
+	// 3. Implement token refresh logic
+	
+	return nil, fmt.Errorf("OAuth2 token validation not implemented")
 }
 
 // GetUserFromContext retrieves the user from the context

@@ -2,26 +2,53 @@
 .git
 .gitignore
 
-# IDE
-.idea
-.vscode
+# Documentation
+README.md
+examples/
+*.md
 
-# Build
+# Development files
+.env
+.env.local
+.env.*.local
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Test files
+*_test.go
+test/
+
+# Temporary files
+tmp/
+temp/
+
+# Vendor directory (we'll download dependencies in Docker)
+vendor/
+
+# Docker files
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Build artifacts
+main
 *.exe
-*.exe~
 *.dll
 *.so
 *.dylib
-*.test
-*.out
 
-# Environment
-.env
-.env.*
-!.env.example
-
-# Misc
-README.md
-LICENSE
-*.md
-.DS_Store 
+# Coverage reports
+coverage.txt
+*.out 
