@@ -4,6 +4,7 @@ import (
 	"buku-pintar/internal/domain/entity"
 	"buku-pintar/internal/domain/repository"
 	"buku-pintar/internal/domain/service"
+	"buku-pintar/pkg/oauth2"
 	"context"
 	"errors"
 
@@ -57,6 +58,28 @@ func (s *userService) RegisterWithFirebase(ctx context.Context, user *entity.Use
 
 	// Set user ID from Firebase UID
 	user.ID = token.UID
+
+	// Set default role and status if not provided
+	if user.Role == "" {
+		user.Role = entity.RoleReader
+	}
+	if user.Status == "" {
+		user.Status = entity.StatusActive
+	}
+
+	// Create user in database
+	return s.userRepo.Create(ctx, user)
+}
+
+func (s *userService) RegisterWithOAuth2(ctx context.Context, user *entity.User, provider oauth2.Provider) error {
+	// Check if user already exists
+	existingUser, err := s.userRepo.GetByEmail(ctx, user.Email)
+	if err != nil {
+		return err
+	}
+	if existingUser != nil {
+		return errors.New("user already exists")
+	}
 
 	// Set default role and status if not provided
 	if user.Role == "" {

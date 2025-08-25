@@ -8,6 +8,7 @@ import (
 	"buku-pintar/internal/usecase"
 	"buku-pintar/pkg/config"
 	"buku-pintar/pkg/firebase"
+	"buku-pintar/pkg/oauth2"
 	"database/sql"
 	"fmt"
 	"log"
@@ -34,6 +35,37 @@ func main() {
 	fb, err := firebase.NewFirebase(firebaseCfg)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	// Initialize OAuth2 service
+	oauth2Service := oauth2.NewOAuth2Service()
+	
+	// Add OAuth2 providers if configured
+	if cfg.OAuth2.Google.ClientID != "" && cfg.OAuth2.Google.ClientSecret != "" {
+		oauth2Service.AddGoogleProvider(
+			cfg.OAuth2.Google.ClientID,
+			cfg.OAuth2.Google.ClientSecret,
+			cfg.OAuth2.Google.RedirectURL,
+		)
+		log.Println("Google OAuth2 provider configured")
+	}
+	
+	if cfg.OAuth2.GitHub.ClientID != "" && cfg.OAuth2.GitHub.ClientSecret != "" {
+		oauth2Service.AddGitHubProvider(
+			cfg.OAuth2.GitHub.ClientID,
+			cfg.OAuth2.GitHub.ClientSecret,
+			cfg.OAuth2.GitHub.RedirectURL,
+		)
+		log.Println("GitHub OAuth2 provider configured")
+	}
+	
+	if cfg.OAuth2.Facebook.ClientID != "" && cfg.OAuth2.Facebook.ClientSecret != "" {
+		oauth2Service.AddFacebookProvider(
+			cfg.OAuth2.Facebook.ClientID,
+			cfg.OAuth2.Facebook.ClientSecret,
+			cfg.OAuth2.Facebook.RedirectURL,
+		)
+		log.Println("Facebook OAuth2 provider configured")
 	}
 
 	// Get database configuration based on environment
@@ -73,6 +105,9 @@ func main() {
 	userUsecase := usecase.NewUserUsecase(userRepo, userService)
 	userHandler := http.NewUserHandler(userUsecase)
 
+	// Initialize OAuth2 dependencies
+	oauth2Handler := http.NewOAuth2Handler(oauth2Service, userUsecase)
+
 	// Initialize payment dependencies
 	paymentRepo := mysql.NewPaymentRepository(db)
 	paymentService := service.NewPaymentService(paymentRepo, cfg.Payment.Xendit.Key)
@@ -80,7 +115,7 @@ func main() {
 	paymentHandler := http.NewPaymentHandler(paymentUsecase)
 
 	// Initialize auth middleware
-	authMiddleware := middleware.NewAuthMiddleware(fb.Auth())
+	authMiddleware := middleware.NewAuthMiddleware(fb.Auth(), oauth2Service)
 
 	// Initialize ebook dependencies
 	ebookRepo := mysql.NewEbookRepository(db)
@@ -88,7 +123,7 @@ func main() {
 	ebookHandler := http.NewEbookHandler(ebookUsecase)
 
 	// Initialize router
-	router := http.NewRouter(categoryHandler, ebookHandler, userHandler, paymentHandler, authMiddleware)
+	router := http.NewRouter(categoryHandler, ebookHandler, userHandler, paymentHandler, oauth2Handler, authMiddleware)
 	mux := router.SetupRoutes()
 
 	// Start server
