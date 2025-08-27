@@ -2,7 +2,10 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
+
+	"github.com/redis/go-redis/v9"
 )
 
 type AppConfig struct {
@@ -18,6 +21,13 @@ type DatabaseConfig struct {
 	Password string `json:"password"`
 	Name     string `json:"name"`
 	Params   string `json:"params"`
+}
+
+type RedisConfig struct {
+	Host     string `json:"host"`
+	Port     string `json:"port"`
+	Password string `json:"password"`
+	DB       int    `json:"db"`
 }
 
 type FirebaseConfig struct {
@@ -65,6 +75,7 @@ type Config struct {
 	App           AppConfig      `json:"app"`
 	Payment       PaymentConfig  `json:"payment"`
 	OAuth2        OAuth2Config   `json:"oauth2"`
+	Redis         RedisConfig    `json:"redis"`
 }
 
 // Load loads the configuration from a JSON file
@@ -95,4 +106,17 @@ func (c *Config) GetDatabaseConfig() DatabaseConfig {
 		return c.DatabaseLocal
 	}
 	return c.Database
+}
+
+
+func (c *Config) LoadRedis () (*redis.Client, error) {
+    redisConfig := c.Redis
+
+    redisClient := redis.NewClient(&redis.Options{
+        Addr:     fmt.Sprintf("%s:%s", redisConfig.Host, redisConfig.Port),
+        Password: redisConfig.Password,
+        DB:       redisConfig.DB,
+    })
+
+    return redisClient, nil
 }

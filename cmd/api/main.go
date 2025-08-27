@@ -4,6 +4,7 @@ import (
 	"buku-pintar/internal/delivery/http"
 	"buku-pintar/internal/delivery/http/middleware"
 	"buku-pintar/internal/repository/mysql"
+	"buku-pintar/internal/repository/redis"
 	"buku-pintar/internal/service"
 	"buku-pintar/internal/usecase"
 	"buku-pintar/pkg/config"
@@ -94,9 +95,24 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Initialize Redis
+	cRedis, err := cfg.LoadRedis()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Initialize banner dependencies
+	bannerRepo := mysql.NewBannerRepository(db)
+	bannerRedisRepo := redis.NewBannerRedisRepository(cRedis)
+	bannerService := service.NewBannerService(bannerRepo, bannerRedisRepo)
+	bannerUsecase := usecase.NewBannerUsecase(bannerService)
+	bannerHandler := http.NewBannerHandler(bannerUsecase)
+
 	// Initialize category dependencies
 	categoryRepo := mysql.NewCategoryRepository(db)
-	categoryUsecase := usecase.NewCategoryUsecase(categoryRepo)
+	categoryRedisRepo := redis.NewCategoryRedisRepository(cRedis)
+	categoryService := service.NewCategoryService(categoryRepo, categoryRedisRepo)
+	categoryUsecase := usecase.NewCategoryUsecase(categoryService)
 	categoryHandler := http.NewCategoryHandler(categoryUsecase)
 
 	// Initialize user dependencies
@@ -123,7 +139,7 @@ func main() {
 	ebookHandler := http.NewEbookHandler(ebookUsecase)
 
 	// Initialize router
-	router := http.NewRouter(categoryHandler, ebookHandler, userHandler, paymentHandler, oauth2Handler, authMiddleware)
+	router := http.NewRouter(bannerHandler, categoryHandler, ebookHandler, userHandler, paymentHandler, oauth2Handler, authMiddleware)
 	mux := router.SetupRoutes()
 
 	// Start server

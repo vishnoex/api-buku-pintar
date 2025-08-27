@@ -7,6 +7,7 @@ import (
 
 // Router handles all route definitions
 type Router struct {
+	bannerHandler   *BannerHandler
 	categoryHandler *CategoryHandler
 	ebookHandler    *EbookHandler
 	userHandler     *UserHandler
@@ -17,6 +18,7 @@ type Router struct {
 
 // NewRouter creates a new router instance
 func NewRouter(
+	bannerHandler *BannerHandler,
 	categoryHandler *CategoryHandler,
 	ebookHandler *EbookHandler,
 	userHandler *UserHandler,
@@ -25,6 +27,7 @@ func NewRouter(
 	authMiddleware *middleware.AuthMiddleware,
 ) *Router {
 	return &Router{
+		bannerHandler: bannerHandler,
 		categoryHandler: categoryHandler,
 		ebookHandler:    ebookHandler,
 		userHandler:     userHandler,
@@ -40,6 +43,24 @@ func (r *Router) SetupRoutes() *http.ServeMux {
 
 	// Category routes
 	mux.HandleFunc("/categories", r.categoryHandler.ListCategory)
+	mux.HandleFunc("/categories/all", r.categoryHandler.ListAllCategories)
+	mux.HandleFunc("/categories/view/{id}", r.categoryHandler.GetCategoryByID)
+	mux.HandleFunc("/categories/parent/{parentID}", r.categoryHandler.ListCategoriesByParent)
+	
+	// Protected category routes (admin only)
+	mux.Handle("/categories/create", r.authMiddleware.Authenticate(http.HandlerFunc(r.categoryHandler.CreateCategory)))
+	mux.Handle("/categories/edit/{id}", r.authMiddleware.Authenticate(http.HandlerFunc(r.categoryHandler.UpdateCategory)))
+	mux.Handle("/categories/delete/{id}", r.authMiddleware.Authenticate(http.HandlerFunc(r.categoryHandler.DeleteCategory)))
+
+	// Banner routes
+	mux.HandleFunc("/banners", r.bannerHandler.ListBanner)
+	mux.HandleFunc("/banners/active", r.bannerHandler.ListActiveBanner)
+	mux.HandleFunc("/banners/view/{id}", r.bannerHandler.GetBannerByID)
+	
+	// Protected banner routes (admin only)
+	mux.Handle("/banners/create", r.authMiddleware.Authenticate(http.HandlerFunc(r.bannerHandler.CreateBanner)))
+	mux.Handle("/banners/edit/{id}", r.authMiddleware.Authenticate(http.HandlerFunc(r.bannerHandler.UpdateBanner)))
+	mux.Handle("/banners/delete/{id}", r.authMiddleware.Authenticate(http.HandlerFunc(r.bannerHandler.DeleteBanner)))
 
 	// Ebook routes
 	mux.HandleFunc("/ebooks", r.ebookHandler.ListEbooks)

@@ -15,7 +15,9 @@ A RESTful API service for Buku Pintar application built with Go, following Clean
 │   │   ├── repository/    # Repository interfaces
 │   │   └── service/       # Service interfaces
 │   ├── repository/        # Repository implementations
-│   │   └── mysql/        # MySQL repository
+│   │   ├── mysql/         # MySQL repository
+│   │   └── redis/         # Redis repository (caching)
+│   ├── service/           # Service implementations
 │   ├── usecase/          # Application business rules
 │   └── delivery/         # Interface adapters
 │       └── http/         # HTTP handlers
@@ -25,6 +27,7 @@ A RESTful API service for Buku Pintar application built with Go, following Clean
 │   ├── firebase/         # Firebase integration
 │   └── oauth2/           # OAuth2 service
 ├── migrations/            # Database migrations
+├── seeder/               # Database seeders
 ├── config.json           # Application configuration
 ├── firebase-credentials.json  # Firebase service account credentials
 ├── Dockerfile
@@ -169,6 +172,25 @@ go run cmd/api/main.go
 
 - `POST /users/register` - Register a new user
 - `POST /payments/callback` - Xendit payment status callback
+
+### Banner Endpoints
+
+- `GET /banners` - List active banners (paginated)
+- `GET /banners/active` - List active banners (paginated)
+- `GET /banners/view/{id}` - Get banner by ID
+- `POST /banners/create` - Create new banner (protected)
+- `PUT /banners/edit/{id}` - Update banner (protected)
+- `DELETE /banners/delete/{id}` - Delete banner (protected)
+
+### Category Endpoints
+
+- `GET /categories` - List active categories (paginated)
+- `GET /categories/all` - List all categories (paginated)
+- `GET /categories/view/{id}` - Get category by ID
+- `GET /categories/parent/{parentID}` - List categories by parent (paginated)
+- `POST /categories/create` - Create new category (protected)
+- `PUT /categories/edit/{id}` - Update category (protected)
+- `DELETE /categories/delete/{id}` - Delete category (protected)
 
 ### OAuth2 Endpoints
 
@@ -373,40 +395,211 @@ CREATE TABLE payments (
 - Payment use cases depend on payment service abstractions
 - OAuth2 handlers depend on OAuth2 service abstractions
 
-## Clean Architecture
+## Architecture Overview
 
-The project follows Clean Architecture principles with distinct layers:
+The project follows **Clean Architecture** principles with a **UseCase → Service → Repository** pattern, providing clear separation of concerns, improved maintainability, and enhanced performance through intelligent caching strategies.
 
-### 1. Domain Layer (Enterprise Business Rules)
-- Contains enterprise-wide business rules
-- Independent of other layers
-- Includes entities, repository interfaces, and service interfaces
-- No dependencies on external frameworks
-- Payment entity and interfaces are domain-driven
-- OAuth2 provider types are domain-driven
+### Architecture Pattern
 
-### 2. Use Case Layer (Application Business Rules)
-- Implements application-specific business rules
-- Orchestrates the flow of data to and from entities
-- Depends only on the domain layer
-- Contains use case implementations
-- Payment use cases handle payment flow orchestration
-- OAuth2 use cases handle authentication flow orchestration
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   HTTP Layer    │    │  UseCase        │    │   Service       │
+│   (Handlers)    │───▶│  (Orchestration)│───▶│   (Business     │
+│                 │    │                 │    │    Logic)       │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                                       │
+                                                       ▼
+                                              ┌─────────────────┐
+                                              │   Repository    │
+                                              │   (Data Access) │
+                                              │   MySQL + Redis │
+                                              └─────────────────┘
+```
 
-### 3. Interface Adapters Layer
-- Converts data between the format most convenient for use cases and entities
-- Contains controllers, presenters, and gateways
-- Implements repository interfaces
-- Handles HTTP requests and responses
-- Payment handlers adapt HTTP requests to use cases
-- OAuth2 handlers adapt HTTP requests to use cases
+### Layer Responsibilities
 
-### 4. Frameworks & Drivers Layer
-- Contains frameworks and tools like the database, web framework, etc.
-- All frameworks are kept in this layer
-- Communicates with the interface adapters layer
-- Xendit SDK integration is isolated in this layer
-- OAuth2 provider SDKs are isolated in this layer
+#### 1. **HTTP Layer (Delivery)**
+- **Purpose**: Handle HTTP requests and responses
+- **Responsibilities**: 
+  - Request validation and parsing
+  - Response formatting
+  - Error handling
+  - Authentication middleware
+- **Components**: HTTP handlers, middleware, response models
+
+#### 2. **UseCase Layer (Application Business Rules)**
+- **Purpose**: Orchestrate application workflows
+- **Responsibilities**:
+  - Coordinate between handlers and services
+  - Data transformation (entities ↔ DTOs)
+  - Application-level error handling
+  - Business flow orchestration
+- **Components**: Use case implementations
+
+#### 3. **Service Layer (Domain Business Logic)**
+- **Purpose**: Implement business logic and caching strategies
+- **Responsibilities**:
+  - Business rule enforcement
+  - Cache management (Redis)
+  - External service integration
+  - Data validation and processing
+- **Components**: Service interfaces and implementations
+
+#### 4. **Repository Layer (Data Access)**
+- **Purpose**: Abstract data access operations
+- **Responsibilities**:
+  - Database operations (MySQL)
+  - Cache operations (Redis)
+  - Data persistence
+  - Query optimization
+- **Components**: Repository interfaces and implementations
+
+### Clean Architecture Implementation
+
+#### **Domain Layer (Enterprise Business Rules)**
+- **Entities**: Core business objects (User, Category, Banner, Payment, etc.)
+- **Repository Interfaces**: Data access contracts
+- **Service Interfaces**: Business logic contracts
+- **Characteristics**: Framework-independent, no external dependencies
+
+#### **Use Case Layer (Application Business Rules)**
+- **Orchestration**: Coordinates between layers
+- **Data Transformation**: Converts between domain entities and DTOs
+- **Error Handling**: Application-level error management
+- **Dependencies**: Only depends on domain layer
+
+#### **Interface Adapters Layer**
+- **HTTP Handlers**: Request/response handling
+- **Repository Implementations**: MySQL and Redis implementations
+- **Service Implementations**: Business logic implementations
+- **Middleware**: Authentication, logging, etc.
+
+#### **Frameworks & Drivers Layer**
+- **Database**: MySQL, Redis
+- **External Services**: Firebase, Xendit, OAuth2 providers
+- **Web Framework**: Standard HTTP library
+- **Configuration**: JSON-based configuration
+
+### Caching Strategy
+
+The application implements a sophisticated caching strategy using Redis:
+
+#### **Cache Patterns**
+- **Cache-Aside**: Read from cache first, fallback to database
+- **Write-Through**: Update database first, then invalidate cache
+- **Cache Invalidation**: Bulk invalidation for data consistency
+
+#### **Cache Keys Structure**
+```
+banner:list:{limit}:{offset}          # Banner lists
+banner:count:total                    # Banner counts
+category:list:{limit}:{offset}        # Category lists
+category:active:list:{limit}:{offset} # Active category lists
+category:count:total                  # Category counts
+category:id:{id}                      # Individual categories
+```
+
+#### **Cache TTL**
+- **Banner Cache**: 5 minutes
+- **Category Cache**: 10 minutes
+- **Configurable**: TTL can be adjusted per service
+
+#### **Cache Invalidation**
+- **Automatic**: Cache cleared on data changes (Create/Update/Delete)
+- **Graceful Degradation**: System works without cache
+- **Logging**: Cache operations logged for monitoring
+
+### Performance Optimizations
+
+#### **1. Intelligent Caching**
+- **Frequently Accessed Data**: Lists, counts, individual items
+- **Selective Caching**: Different strategies for different data types
+- **Cache Warming**: Pre-populate frequently accessed data
+
+#### **2. Database Optimization**
+- **Connection Pooling**: Efficient database connections
+- **Query Optimization**: Optimized SQL queries
+- **Indexing**: Proper database indexing
+
+#### **3. External Service Integration**
+- **Async Operations**: Non-blocking external service calls
+- **Circuit Breaker**: Graceful handling of service failures
+- **Retry Logic**: Automatic retry for transient failures
+
+### Module-Specific Architecture
+
+#### **Banner Module**
+```
+UseCase → BannerService → BannerRepository + BannerRedisRepository
+```
+- **Features**: CRUD operations, active/inactive filtering
+- **Caching**: Lists, counts, automatic invalidation
+- **Endpoints**: 6 REST endpoints with pagination
+
+#### **Category Module**
+```
+UseCase → CategoryService → CategoryRepository + CategoryRedisRepository
+```
+- **Features**: CRUD operations, hierarchical support, parent-child relationships
+- **Caching**: Lists, counts, individual items, hierarchical data
+- **Endpoints**: 7 REST endpoints with pagination and hierarchy support
+
+#### **User Module**
+```
+UseCase → UserService → UserRepository
+```
+- **Features**: Authentication, registration, profile management
+- **Integration**: Firebase Auth, OAuth2 providers
+- **Security**: Password hashing, token validation
+
+#### **Payment Module**
+```
+UseCase → PaymentService → PaymentRepository
+```
+- **Features**: Payment processing, status tracking
+- **Integration**: Xendit payment gateway
+- **Webhooks**: Payment status callbacks
+
+### Benefits of This Architecture
+
+#### **1. Separation of Concerns**
+- **Clear Boundaries**: Each layer has specific responsibilities
+- **Maintainability**: Easy to modify individual components
+- **Testability**: Each layer can be tested independently
+
+#### **2. Scalability**
+- **Horizontal Scaling**: Services can be scaled independently
+- **Performance**: Caching reduces database load
+- **Flexibility**: Easy to add new features or modify existing ones
+
+#### **3. Reliability**
+- **Graceful Degradation**: System works even when components fail
+- **Error Handling**: Comprehensive error handling at each layer
+- **Monitoring**: Logging and metrics for system health
+
+#### **4. Maintainability**
+- **Code Organization**: Clear structure and naming conventions
+- **Dependency Management**: Clear dependency flow
+- **Documentation**: Comprehensive documentation for each layer
+
+### Future Enhancements
+
+#### **1. Advanced Caching**
+- **Cache Warming**: Pre-populate cache with frequently accessed data
+- **Cache Tags**: More granular cache invalidation
+- **Cache Compression**: Reduce memory usage
+
+#### **2. Performance Monitoring**
+- **Metrics**: Prometheus metrics for performance monitoring
+- **Tracing**: Distributed tracing for request flows
+- **Profiling**: Application performance profiling
+
+#### **3. Advanced Features**
+- **Background Jobs**: Async processing for heavy operations
+- **Event Sourcing**: Event-driven architecture
+- **Microservices**: Service decomposition for large scale
+
+This architecture provides a solid foundation for building scalable, maintainable, and high-performance applications while following clean architecture principles and industry best practices.
 
 ## Testing
 

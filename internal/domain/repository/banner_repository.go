@@ -17,3 +17,10 @@ type BannerRepository interface {
 	Count(ctx context.Context) (int64, error)
 	CountActive(ctx context.Context) (int64, error)
 }
+
+type BannerRedisRepository interface {
+	GetBannerTotal(ctx context.Context) (int64, error)
+	SetBannerTotal(ctx context.Context, data int64) error
+	GetBannerList(ctx context.Context, limit, offset int) ([]*entity.Banner, error)
+	SetBannerList(ctx context.Context, data []*entity.Banner, limit, offset int) error
+}

@@ -8,6 +8,7 @@ require (
 	firebase.google.com/go/v4 v4.12.1
 	github.com/go-sql-driver/mysql v1.9.2
 	github.com/google/uuid v1.5.0
+	github.com/redis/go-redis/v9 v9.12.1
 	github.com/xendit/xendit-go v1.0.25
 	golang.org/x/crypto v0.17.0
 	golang.org/x/oauth2 v0.30.0
@@ -23,6 +24,8 @@ require (
 	cloud.google.com/go/storage v1.30.1 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/MicahParks/keyfunc v1.9.0 // indirect
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.3.0 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
