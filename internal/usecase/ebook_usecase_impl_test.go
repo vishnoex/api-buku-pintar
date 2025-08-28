@@ -10,8 +10,8 @@ import (
 	"github.com/google/uuid"
 )
 
-// MockEbookRepository is a simple mock implementation for testing
-type MockEbookRepository struct {
+// MockEbookService is a simple mock implementation for testing
+type MockEbookService struct {
 	ebooks        []*entity.Ebook
 	ebookList     []*entity.EbookList
 	ebook         *entity.Ebook
@@ -25,21 +25,21 @@ type MockEbookRepository struct {
 	existingBySlug *entity.Ebook
 }
 
-func (m *MockEbookRepository) Create(ctx context.Context, ebook *entity.Ebook) error {
+func (m *MockEbookService) CreateEbook(ctx context.Context, ebook *entity.Ebook) error {
 	if m.createFunc != nil {
 		return m.createFunc(ctx, ebook)
 	}
 	return m.err
 }
 
-func (m *MockEbookRepository) GetByID(ctx context.Context, id string) (*entity.Ebook, error) {
+func (m *MockEbookService) GetEbookByID(ctx context.Context, id string) (*entity.Ebook, error) {
 	if m.getByIDFunc != nil {
 		return m.getByIDFunc(ctx, id)
 	}
 	return m.ebook, m.err
 }
 
-func (m *MockEbookRepository) GetBySlug(ctx context.Context, slug string) (*entity.Ebook, error) {
+func (m *MockEbookService) GetEbookBySlug(ctx context.Context, slug string) (*entity.Ebook, error) {
 	if m.getBySlugFunc != nil {
 		return m.getBySlugFunc(ctx, slug)
 	}
@@ -49,38 +49,38 @@ func (m *MockEbookRepository) GetBySlug(ctx context.Context, slug string) (*enti
 	return m.ebook, m.err
 }
 
-func (m *MockEbookRepository) Update(ctx context.Context, ebook *entity.Ebook) error {
+func (m *MockEbookService) UpdateEbook(ctx context.Context, ebook *entity.Ebook) error {
 	return m.err
 }
 
-func (m *MockEbookRepository) Delete(ctx context.Context, id string) error {
+func (m *MockEbookService) DeleteEbook(ctx context.Context, id string) error {
 	return m.err
 }
 
-func (m *MockEbookRepository) List(ctx context.Context, limit, offset int) ([]*entity.EbookList, error) {
+func (m *MockEbookService) GetEbookList(ctx context.Context, limit, offset int) ([]*entity.EbookList, error) {
 	if m.listFunc != nil {
 		return m.listFunc(ctx, limit, offset)
 	}
 	return m.ebookList, m.err
 }
 
-func (m *MockEbookRepository) ListByCategory(ctx context.Context, categoryID string, limit, offset int) ([]*entity.Ebook, error) {
+func (m *MockEbookService) GetEbookListByCategory(ctx context.Context, categoryID string, limit, offset int) ([]*entity.Ebook, error) {
 	return m.ebooks, m.err
 }
 
-func (m *MockEbookRepository) ListByAuthor(ctx context.Context, authorID string, limit, offset int) ([]*entity.Ebook, error) {
+func (m *MockEbookService) GetEbookListByAuthor(ctx context.Context, authorID string, limit, offset int) ([]*entity.Ebook, error) {
 	return m.ebooks, m.err
 }
 
-func (m *MockEbookRepository) Count(ctx context.Context) (int64, error) {
+func (m *MockEbookService) GetEbookCount(ctx context.Context) (int64, error) {
 	return m.count, m.err
 }
 
-func (m *MockEbookRepository) CountByCategory(ctx context.Context, categoryID string) (int64, error) {
+func (m *MockEbookService) GetEbookCountByCategory(ctx context.Context, categoryID string) (int64, error) {
 	return m.count, m.err
 }
 
-func (m *MockEbookRepository) CountByAuthor(ctx context.Context, authorID string) (int64, error) {
+func (m *MockEbookService) GetEbookCountByAuthor(ctx context.Context, authorID string) (int64, error) {
 	return m.count, m.err
 }
 
@@ -167,12 +167,12 @@ func TestEbookUsecase_ListEbooks(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Arrange
-			mockRepo := &MockEbookRepository{
-				ebookList: tt.mockEbookList,
-				err:    tt.mockError,
-			}
-			usecase := NewEbookUsecase(mockRepo)
+					// Arrange
+		mockRepo := &MockEbookService{
+			ebookList: tt.mockEbookList,
+			err:    tt.mockError,
+		}
+		usecase := NewEbookUsecase(mockRepo)
 			ctx := context.Background()
 
 			// Act
@@ -263,7 +263,7 @@ func TestEbookUsecase_ListEbooksByCategory(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Arrange
-			mockRepo := &MockEbookRepository{
+			mockRepo := &MockEbookService{
 				ebooks: tt.mockEbooks,
 				err:    tt.mockError,
 			}
@@ -346,7 +346,7 @@ func TestEbookUsecase_GetEbookByID(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Arrange
-			mockRepo := &MockEbookRepository{
+			mockRepo := &MockEbookService{
 				ebook: tt.mockEbook,
 				err:   tt.mockError,
 			}
@@ -438,7 +438,7 @@ func TestEbookUsecase_GetEbookBySlug(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Arrange
-			mockRepo := &MockEbookRepository{
+			mockRepo := &MockEbookService{
 				ebook: tt.mockEbook,
 				err:   tt.mockError,
 			}
@@ -583,7 +583,7 @@ func TestEbookUsecase_CreateEbook(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Arrange
-			mockRepo := &MockEbookRepository{
+			mockRepo := &MockEbookService{
 				ebook: tt.mockExisting,
 				err:   tt.mockError,
 			}
@@ -679,7 +679,7 @@ func TestEbookUsecase_UpdateEbook(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Arrange
-			mockRepo := &MockEbookRepository{
+			mockRepo := &MockEbookService{
 				ebook: tt.mockExisting,
 				err:   tt.mockError,
 			}
@@ -755,7 +755,7 @@ func TestEbookUsecase_DeleteEbook(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Arrange
-			mockRepo := &MockEbookRepository{
+			mockRepo := &MockEbookService{
 				ebook: tt.mockExisting,
 				err:   tt.mockError,
 			}

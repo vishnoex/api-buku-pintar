@@ -1,21 +1,22 @@
 package usecase
 
 import (
+	"buku-pintar/internal/constant"
 	"buku-pintar/internal/delivery/http/response"
 	"buku-pintar/internal/domain/entity"
-	"buku-pintar/internal/domain/repository"
+	"buku-pintar/internal/domain/service"
 	"context"
 	"errors"
 )
 
 type ebookUsecase struct {
-	ebookRepo repository.EbookRepository
+	ebookService service.EbookService
 }
 
 // NewEbookUsecase creates a new instance of EbookUsecase
-func NewEbookUsecase(ebookRepo repository.EbookRepository) EbookUsecase {
+func NewEbookUsecase(ebookService service.EbookService) EbookUsecase {
 	return &ebookUsecase{
-		ebookRepo: ebookRepo,
+		ebookService: ebookService,
 	}
 }
 
@@ -25,17 +26,17 @@ func (u *ebookUsecase) CreateEbook(ctx context.Context, ebook *entity.Ebook) err
 		return errors.New("title is required")
 	}
 	if ebook.AuthorID == "" {
-		return errors.New("author_id is required")
+		return errors.New(constant.ERR_AUTHOR_ID_REQUIRED)
 	}
 	if ebook.CategoryID == "" {
-		return errors.New("category_id is required")
+		return errors.New(constant.ERR_CATEGORY_ID_REQUIRED)
 	}
 	if ebook.Slug == "" {
 		return errors.New("slug is required")
 	}
 
 	// Check if ebook with same slug already exists
-	existingEbook, err := u.ebookRepo.GetBySlug(ctx, ebook.Slug)
+	existingEbook, err := u.ebookService.GetEbookBySlug(ctx, ebook.Slug)
 	if err != nil {
 		return err
 	}
@@ -43,15 +44,15 @@ func (u *ebookUsecase) CreateEbook(ctx context.Context, ebook *entity.Ebook) err
 		return errors.New("ebook with this slug already exists")
 	}
 
-	return u.ebookRepo.Create(ctx, ebook)
+	return u.ebookService.CreateEbook(ctx, ebook)
 }
 
 func (u *ebookUsecase) GetEbookByID(ctx context.Context, id string) (*entity.Ebook, error) {
 	if id == "" {
-		return nil, errors.New("id is required")
+		return nil, errors.New(constant.ERR_ID_REQUIRED)
 	}
 
-	return u.ebookRepo.GetByID(ctx, id)
+	return u.ebookService.GetEbookByID(ctx, id)
 }
 
 func (u *ebookUsecase) GetEbookBySlug(ctx context.Context, slug string) (*entity.Ebook, error) {
@@ -59,16 +60,16 @@ func (u *ebookUsecase) GetEbookBySlug(ctx context.Context, slug string) (*entity
 		return nil, errors.New("slug is required")
 	}
 
-	return u.ebookRepo.GetBySlug(ctx, slug)
+	return u.ebookService.GetEbookBySlug(ctx, slug)
 }
 
 func (u *ebookUsecase) UpdateEbook(ctx context.Context, ebook *entity.Ebook) error {
 	if ebook.ID == "" {
-		return errors.New("id is required")
+		return errors.New(constant.ERR_ID_REQUIRED)
 	}
 
 	// Check if ebook exists
-	existingEbook, err := u.ebookRepo.GetByID(ctx, ebook.ID)
+	existingEbook, err := u.ebookService.GetEbookByID(ctx, ebook.ID)
 	if err != nil {
 		return err
 	}
@@ -78,7 +79,7 @@ func (u *ebookUsecase) UpdateEbook(ctx context.Context, ebook *entity.Ebook) err
 
 	// If slug is being updated, check for uniqueness
 	if ebook.Slug != "" && ebook.Slug != existingEbook.Slug {
-		existingBySlug, err := u.ebookRepo.GetBySlug(ctx, ebook.Slug)
+		existingBySlug, err := u.ebookService.GetEbookBySlug(ctx, ebook.Slug)
 		if err != nil {
 			return err
 		}
@@ -87,16 +88,16 @@ func (u *ebookUsecase) UpdateEbook(ctx context.Context, ebook *entity.Ebook) err
 		}
 	}
 
-	return u.ebookRepo.Update(ctx, ebook)
+	return u.ebookService.UpdateEbook(ctx, ebook)
 }
 
 func (u *ebookUsecase) DeleteEbook(ctx context.Context, id string) error {
 	if id == "" {
-		return errors.New("id is required")
+		return errors.New(constant.ERR_ID_REQUIRED)
 	}
 
 	// Check if ebook exists
-	existingEbook, err := u.ebookRepo.GetByID(ctx, id)
+	existingEbook, err := u.ebookService.GetEbookByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -104,7 +105,7 @@ func (u *ebookUsecase) DeleteEbook(ctx context.Context, id string) error {
 		return errors.New("ebook not found")
 	}
 
-	return u.ebookRepo.Delete(ctx, id)
+	return u.ebookService.DeleteEbook(ctx, id)
 }
 
 func (u *ebookUsecase) ListEbooks(ctx context.Context, limit, offset int) ([]*response.EbookListResponse, error) {
@@ -117,7 +118,7 @@ func (u *ebookUsecase) ListEbooks(ctx context.Context, limit, offset int) ([]*re
 	}
 
 	ebooks := []*response.EbookListResponse{}
-	ebookList, err := u.ebookRepo.List(ctx, limit, offset)
+	ebookList, err := u.ebookService.GetEbookList(ctx, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +132,7 @@ func (u *ebookUsecase) ListEbooks(ctx context.Context, limit, offset int) ([]*re
 
 func (u *ebookUsecase) ListEbooksByCategory(ctx context.Context, categoryID string, limit, offset int) ([]*entity.Ebook, error) {
 	if categoryID == "" {
-		return nil, errors.New("category_id is required")
+		return nil, errors.New(constant.ERR_CATEGORY_ID_REQUIRED)
 	}
 
 	// Validate pagination parameters
@@ -142,12 +143,12 @@ func (u *ebookUsecase) ListEbooksByCategory(ctx context.Context, categoryID stri
 		offset = 0
 	}
 
-	return u.ebookRepo.ListByCategory(ctx, categoryID, limit, offset)
+	return u.ebookService.GetEbookListByCategory(ctx, categoryID, limit, offset)
 }
 
 func (u *ebookUsecase) ListEbooksByAuthor(ctx context.Context, authorID string, limit, offset int) ([]*entity.Ebook, error) {
 	if authorID == "" {
-		return nil, errors.New("author_id is required")
+		return nil, errors.New(constant.ERR_AUTHOR_ID_REQUIRED)
 	}
 
 	// Validate pagination parameters
@@ -158,25 +159,25 @@ func (u *ebookUsecase) ListEbooksByAuthor(ctx context.Context, authorID string, 
 		offset = 0
 	}
 
-	return u.ebookRepo.ListByAuthor(ctx, authorID, limit, offset)
+	return u.ebookService.GetEbookListByAuthor(ctx, authorID, limit, offset)
 }
 
 func (u *ebookUsecase) CountEbooks(ctx context.Context) (int64, error) {
-	return u.ebookRepo.Count(ctx)
+	return u.ebookService.GetEbookCount(ctx)
 }
 
 func (u *ebookUsecase) CountEbooksByCategory(ctx context.Context, categoryID string) (int64, error) {
 	if categoryID == "" {
-		return 0, errors.New("category_id is required")
+		return 0, errors.New(constant.ERR_CATEGORY_ID_REQUIRED)
 	}
 
-	return u.ebookRepo.CountByCategory(ctx, categoryID)
+	return u.ebookService.GetEbookCountByCategory(ctx, categoryID)
 }
 
 func (u *ebookUsecase) CountEbooksByAuthor(ctx context.Context, authorID string) (int64, error) {
 	if authorID == "" {
-		return 0, errors.New("author_id is required")
+		return 0, errors.New(constant.ERR_AUTHOR_ID_REQUIRED)
 	}
 
-	return u.ebookRepo.CountByAuthor(ctx, authorID)
+	return u.ebookService.GetEbookCountByAuthor(ctx, authorID)
 }

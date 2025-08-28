@@ -192,6 +192,16 @@ go run cmd/api/main.go
 - `PUT /categories/edit/{id}` - Update category (protected)
 - `DELETE /categories/delete/{id}` - Delete category (protected)
 
+### Ebook Endpoints
+
+- `GET /ebooks` - List all ebooks (paginated)
+- `GET /ebooks/{id}` - Get ebook by ID
+- `GET /ebooks/slug/{slug}` - Get ebook by slug
+- `GET /ebooks/category/{categoryID}` - List ebooks by category (paginated)
+- `POST /ebooks/create` - Create new ebook (protected)
+- `PUT /ebooks/edit/{id}` - Update ebook (protected)
+- `DELETE /ebooks/delete/{id}` - Delete ebook (protected)
+
 ### OAuth2 Endpoints
 
 - `POST /oauth2/login` - Initiate OAuth2 login flow
@@ -303,6 +313,369 @@ Content-Type: application/json
 - `failed` - Payment failed
 - `expired` - Payment expired
 
+## Ebook Module
+
+The ebook module provides comprehensive functionality for managing digital books, including metadata, content organization, pricing, and related features like summaries and table of contents.
+
+### Ebook Features
+
+#### **Core Ebook Management**
+- **CRUD Operations**: Create, read, update, and delete ebooks
+- **Metadata Management**: Title, synopsis, cover image, pricing, language, format
+- **Content Organization**: Categories, authors, content status
+- **File Management**: Multiple formats (PDF, EPUB, MOBI), file size, page count
+- **Pricing & Discounts**: Base pricing with promotional discounts
+- **SEO Optimization**: Slug-based URLs for better search engine optimization
+
+#### **Advanced Features**
+- **Table of Contents**: Structured chapter navigation
+- **Summaries**: Regular and premium book summaries with audio
+- **Preview System**: Configurable preview pages for sample reading
+- **Author Integration**: Direct linking to author profiles
+- **Category Filtering**: Browse ebooks by categories
+- **Caching Strategy**: Intelligent Redis caching for performance
+
+### Ebook Data Structure
+
+```json
+{
+    "id": "uuid",
+    "author_id": "author-uuid",
+    "title": "Book Title",
+    "synopsis": "Book description and summary",
+    "slug": "book-title-url-friendly",
+    "cover_image": "https://example.com/cover.jpg",
+    "category_id": "category-uuid",
+    "content_status_id": "status-uuid",
+    "price": 50000,
+    "language": "Indonesian",
+    "duration": 120,
+    "filesize": 2048576,
+    "format": "pdf",
+    "page_count": 250,
+    "preview_page": 20,
+    "url": "https://example.com/book.pdf",
+    "published_at": "2024-01-01T00:00:00Z",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+}
+```
+
+### Ebook Formats
+
+The system supports multiple ebook formats:
+- **PDF** - Portable Document Format
+- **EPUB** - Electronic Publication format
+- **MOBI** - Kindle format
+
+### Ebook API Examples
+
+#### **List All Ebooks**
+```bash
+GET /ebooks?limit=10&offset=0
+```
+
+Response:
+```json
+{
+    "data": [
+        {
+            "id": "ebook-uuid",
+            "title": "Sample Book",
+            "slug": "sample-book",
+            "cover_image": "https://example.com/cover.jpg",
+            "price": 50000,
+            "discount": 0
+        }
+    ],
+    "pagination": {
+        "total": 100,
+        "limit": 10,
+        "offset": 0,
+        "total_pages": 10
+    }
+}
+```
+
+#### **Get Ebook by ID**
+```bash
+GET /ebooks/{id}
+```
+
+Response:
+```json
+{
+    "data": {
+        "id": "ebook-uuid",
+        "title": "Sample Book",
+        "synopsis": "A comprehensive guide...",
+        "slug": "sample-book",
+        "cover_image": "https://example.com/cover.jpg",
+        "price": 50000,
+        "language": "Indonesian",
+        "duration": 120,
+        "filesize": 2048576,
+        "format": "pdf",
+        "page_count": 250,
+        "preview_page": 20,
+        "url": "https://example.com/book.pdf",
+        "published_at": "2024-01-01T00:00:00Z",
+        "author": {
+            "id": "author-uuid",
+            "name": "Author Name"
+        },
+        "category": {
+            "id": "category-uuid",
+            "name": "Technology"
+        },
+        "discount": {
+            "discount_price": 40000,
+            "started_at": "2024-01-01T00:00:00Z",
+            "ended_at": "2024-01-31T23:59:59Z"
+        },
+        "table_of_contents": [
+            {
+                "title": "Chapter 1: Introduction",
+                "page_number": 1
+            }
+        ],
+        "summary": {
+            "description": "Book summary",
+            "url": "https://example.com/summary.pdf",
+            "audio_url": "https://example.com/summary.mp3"
+        },
+        "premium_summary": {
+            "description": "Premium summary",
+            "url": "https://example.com/premium-summary.pdf",
+            "audio_url": "https://example.com/premium-summary.mp3"
+        }
+    }
+}
+```
+
+#### **Create New Ebook**
+```bash
+POST /ebooks/create
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+    "author_id": "author-uuid",
+    "title": "New Book Title",
+    "synopsis": "Book description",
+    "slug": "new-book-title",
+    "cover_image": "https://example.com/cover.jpg",
+    "category_id": "category-uuid",
+    "content_status_id": "status-uuid",
+    "price": 50000,
+    "language": "Indonesian",
+    "duration": 120,
+    "filesize": 2048576,
+    "format": "pdf",
+    "page_count": 250,
+    "preview_page": 20,
+    "url": "https://example.com/book.pdf"
+}
+```
+
+#### **Update Ebook**
+```bash
+PUT /ebooks/edit/{id}
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+    "title": "Updated Book Title",
+    "synopsis": "Updated description",
+    "price": 60000
+}
+```
+
+#### **List Ebooks by Category**
+```bash
+GET /ebooks/category/{categoryID}?limit=10&offset=0
+```
+
+### Ebook Related Tables
+
+#### **Ebooks Table**
+```sql
+CREATE TABLE ebooks (
+    id VARCHAR(36) PRIMARY KEY,
+    author_id VARCHAR(36) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    synopsis TEXT NOT NULL,
+    slug VARCHAR(255) NOT NULL,
+    cover_image VARCHAR(255) NOT NULL,
+    category_id VARCHAR(36) NOT NULL,
+    content_status_id VARCHAR(36) NOT NULL,
+    price INT NOT NULL,
+    language VARCHAR(255) NOT NULL,
+    duration INT NOT NULL,
+    filesize BIGINT NOT NULL,
+    format ENUM('pdf', 'epub', 'mobi') NOT NULL DEFAULT('pdf'),
+    page_count SMALLINT NOT NULL,
+    preview_page SMALLINT NOT NULL,
+    url VARCHAR(255) NOT NULL,
+    published_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (author_id) REFERENCES authors(id),
+    FOREIGN KEY (category_id) REFERENCES categories(id)
+);
+```
+
+#### **Table of Contents**
+```sql
+CREATE TABLE table_of_contents (
+    id VARCHAR(36) PRIMARY KEY,
+    ebook_id VARCHAR(36) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    page_number SMALLINT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (ebook_id) REFERENCES ebooks(id)
+);
+```
+
+#### **Ebook Discounts**
+```sql
+CREATE TABLE ebook_discounts (
+    id VARCHAR(36) PRIMARY KEY,
+    ebook_id VARCHAR(36) NOT NULL,
+    discount_price INT NOT NULL DEFAULT 0,
+    started_at TIMESTAMP NOT NULL,
+    ended_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_ebook_id (ebook_id)
+);
+```
+
+#### **Ebook Summaries**
+```sql
+CREATE TABLE ebook_summaries (
+    id VARCHAR(36) PRIMARY KEY,
+    ebook_id VARCHAR(36) NOT NULL,
+    description VARCHAR(255) NOT NULL,
+    url VARCHAR(255) NOT NULL,
+    audio_url VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_ebook_id (ebook_id)
+);
+```
+
+#### **Ebook Premium Summaries**
+```sql
+CREATE TABLE ebook_premium_summaries (
+    id VARCHAR(36) PRIMARY KEY,
+    ebook_id VARCHAR(36) NOT NULL,
+    description VARCHAR(255) NOT NULL,
+    url VARCHAR(255) NOT NULL,
+    audio_url VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_ebook_id (ebook_id)
+);
+```
+
+### Ebook Module Architecture
+
+#### **Clean Architecture Implementation**
+```
+UseCase → EbookService → EbookRepository + EbookRedisRepository
+```
+
+#### **Layer Responsibilities**
+
+**1. HTTP Layer (EbookHandler)**
+- Request validation and parsing
+- Response formatting
+- Error handling
+- Pagination support
+
+**2. UseCase Layer (EbookUsecase)**
+- Business logic orchestration
+- Data validation
+- Slug uniqueness validation
+- Entity transformation
+
+**3. Service Layer (EbookService)**
+- Business logic implementation
+- Cache management (Redis)
+- Database operations coordination
+- Performance optimization
+
+**4. Repository Layer**
+- **EbookRepository**: MySQL operations
+- **EbookRedisRepository**: Redis caching operations
+
+#### **Caching Strategy**
+
+**Cache Keys Structure**
+```
+ebook:id:{id}                    # Individual ebooks by ID
+ebook:slug:{slug}                # Individual ebooks by slug
+ebook:list:{limit}:{offset}      # Ebook lists
+ebook:category:{categoryID}:{limit}:{offset}  # Ebooks by category
+ebook:count:total                # Total ebook count
+ebook:count:category:{categoryID} # Count by category
+```
+
+**Cache TTL**: 15 minutes (configurable)
+
+**Cache Invalidation**
+- Automatic cache clearing on Create/Update/Delete operations
+- Bulk invalidation for data consistency
+- Graceful degradation when cache is unavailable
+
+#### **Performance Features**
+
+**1. Intelligent Caching**
+- Frequently accessed ebooks cached in Redis
+- List operations cached with pagination
+- Individual ebook details cached by ID and slug
+
+**2. Database Optimization**
+- Proper indexing on frequently queried fields
+- Efficient JOIN operations for related data
+- Optimized queries for pagination
+
+**3. Search and Filtering**
+- Category-based filtering
+- Author-based filtering
+- Slug-based direct access
+- Pagination support for large datasets
+
+### Ebook Module Benefits
+
+#### **1. Comprehensive Content Management**
+- **Rich Metadata**: Complete book information management
+- **Multiple Formats**: Support for various ebook formats
+- **Content Organization**: Categories, authors, and status tracking
+- **SEO Friendly**: Slug-based URLs for better discoverability
+
+#### **2. Advanced Features**
+- **Table of Contents**: Structured navigation within books
+- **Summaries**: Both regular and premium summaries with audio
+- **Discount System**: Flexible promotional pricing
+- **Preview System**: Sample reading capabilities
+
+#### **3. Performance & Scalability**
+- **Intelligent Caching**: Redis-based performance optimization
+- **Efficient Queries**: Optimized database operations
+- **Pagination**: Handle large datasets efficiently
+- **Graceful Degradation**: System works without cache
+
+#### **4. Developer Experience**
+- **Clean Architecture**: Clear separation of concerns
+- **Comprehensive API**: Full CRUD operations with filtering
+- **Error Handling**: Detailed error messages and status codes
+- **Documentation**: Complete API documentation and examples
+
+This ebook module provides a robust foundation for managing digital book content with advanced features, excellent performance, and a clean, maintainable architecture.
+
 ## Authentication
 
 The API supports multiple authentication methods:
@@ -353,6 +726,83 @@ CREATE TABLE payments (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+```
+
+### Ebooks Table
+```sql
+CREATE TABLE ebooks (
+    id VARCHAR(36) PRIMARY KEY,
+    author_id VARCHAR(36) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    synopsis TEXT NOT NULL,
+    slug VARCHAR(255) NOT NULL,
+    cover_image VARCHAR(255) NOT NULL,
+    category_id VARCHAR(36) NOT NULL,
+    content_status_id VARCHAR(36) NOT NULL,
+    price INT NOT NULL,
+    language VARCHAR(255) NOT NULL,
+    duration INT NOT NULL,
+    filesize BIGINT NOT NULL,
+    format ENUM('pdf', 'epub', 'mobi') NOT NULL DEFAULT('pdf'),
+    page_count SMALLINT NOT NULL,
+    preview_page SMALLINT NOT NULL,
+    url VARCHAR(255) NOT NULL,
+    published_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (author_id) REFERENCES authors(id),
+    FOREIGN KEY (category_id) REFERENCES categories(id)
+);
+```
+
+### Related Ebook Tables
+```sql
+-- Table of Contents
+CREATE TABLE table_of_contents (
+    id VARCHAR(36) PRIMARY KEY,
+    ebook_id VARCHAR(36) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    page_number SMALLINT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (ebook_id) REFERENCES ebooks(id)
+);
+
+-- Ebook Discounts
+CREATE TABLE ebook_discounts (
+    id VARCHAR(36) PRIMARY KEY,
+    ebook_id VARCHAR(36) NOT NULL,
+    discount_price INT NOT NULL DEFAULT 0,
+    started_at TIMESTAMP NOT NULL,
+    ended_at TIMESTAMP NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_ebook_id (ebook_id)
+);
+
+-- Ebook Summaries
+CREATE TABLE ebook_summaries (
+    id VARCHAR(36) PRIMARY KEY,
+    ebook_id VARCHAR(36) NOT NULL,
+    description VARCHAR(255) NOT NULL,
+    url VARCHAR(255) NOT NULL,
+    audio_url VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_ebook_id (ebook_id)
+);
+
+-- Ebook Premium Summaries
+CREATE TABLE ebook_premium_summaries (
+    id VARCHAR(36) PRIMARY KEY,
+    ebook_id VARCHAR(36) NOT NULL,
+    description VARCHAR(255) NOT NULL,
+    url VARCHAR(255) NOT NULL,
+    audio_url VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_ebook_id (ebook_id)
 );
 ```
 
@@ -543,6 +993,15 @@ UseCase → CategoryService → CategoryRepository + CategoryRedisRepository
 - **Features**: CRUD operations, hierarchical support, parent-child relationships
 - **Caching**: Lists, counts, individual items, hierarchical data
 - **Endpoints**: 7 REST endpoints with pagination and hierarchy support
+
+#### **Ebook Module**
+```
+UseCase → EbookService → EbookRepository + EbookRedisRepository
+```
+- **Features**: CRUD operations, metadata management, multiple formats, pricing, discounts
+- **Caching**: Lists, counts, individual items, category-based filtering
+- **Endpoints**: 7 REST endpoints with pagination and filtering
+- **Advanced Features**: Table of contents, summaries, preview system, author integration
 
 #### **User Module**
 ```

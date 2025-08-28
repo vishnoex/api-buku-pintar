@@ -135,7 +135,9 @@ func main() {
 
 	// Initialize ebook dependencies
 	ebookRepo := mysql.NewEbookRepository(db)
-	ebookUsecase := usecase.NewEbookUsecase(ebookRepo)
+	ebookRedisRepo := redis.NewEbookRedisRepository(cRedis)
+	ebookService := service.NewEbookService(ebookRepo, ebookRedisRepo)
+	ebookUsecase := usecase.NewEbookUsecase(ebookService)
 	ebookHandler := http.NewEbookHandler(ebookUsecase)
 
 	// Initialize router

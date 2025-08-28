@@ -7,6 +7,8 @@ const (
 	CATEGORY_ID_REQUIRED     string = "category ID is required"
 	ERR_BANNER_ID_REQUIRED   string = "banner ID is required"
 	ERR_CATEGORY_ID_REQUIRED string = "category ID is required"
+	ERR_AUTHOR_ID_REQUIRED   string = "author ID is required"
+	ERR_ID_REQUIRED          string = "id is required"
 
 	ERR_CODE_SERVER_ERROR  string = "internal_server_error"
 	ERR_CODE_BAD_REQUEST   string = "bad_request"
