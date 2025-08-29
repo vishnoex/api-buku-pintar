@@ -196,6 +196,7 @@ func TestEbookService_GetEbookByID_CacheHit(t *testing.T) {
 	}
 	if result == nil {
 		t.Error("expected ebook but got nil")
+		return
 	}
 	if result.ID != expectedEbook.ID {
 		t.Errorf("expected ebook ID %s, got %s", expectedEbook.ID, result.ID)
@@ -235,6 +236,7 @@ func TestEbookService_GetEbookByID_CacheMiss(t *testing.T) {
 	}
 	if result == nil {
 		t.Error("expected ebook but got nil")
+		return
 	}
 	if result.ID != expectedEbook.ID {
 		t.Errorf("expected ebook ID %s, got %s", expectedEbook.ID, result.ID)
