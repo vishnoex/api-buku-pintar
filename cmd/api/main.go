@@ -140,8 +140,15 @@ func main() {
 	ebookUsecase := usecase.NewEbookUsecase(ebookService)
 	ebookHandler := http.NewEbookHandler(ebookUsecase)
 
+	// Initialize summary dependencies
+	summaryRepo := mysql.NewSummaryRepositoryImpl(db)
+	summaryRedisRepo := redis.NewSummaryRedisRepositoryImpl(cRedis)
+	summaryService := service.NewSummaryServiceImpl(summaryRepo, summaryRedisRepo)
+	summaryUsecase := usecase.NewSummaryUsecaseImpl(summaryService)
+	summaryHandler := http.NewSummaryHandler(summaryUsecase)
+
 	// Initialize router
-	router := http.NewRouter(bannerHandler, categoryHandler, ebookHandler, userHandler, paymentHandler, oauth2Handler, authMiddleware)
+	router := http.NewRouter(bannerHandler, categoryHandler, ebookHandler, summaryHandler, userHandler, paymentHandler, oauth2Handler, authMiddleware)
 	mux := router.SetupRoutes()
 
 	// Start server

@@ -10,6 +10,7 @@ type Router struct {
 	bannerHandler   *BannerHandler
 	categoryHandler *CategoryHandler
 	ebookHandler    *EbookHandler
+	summaryHandler  *SummaryHandler
 	userHandler     *UserHandler
 	paymentHandler  *PaymentHandler
 	oauth2Handler   *OAuth2Handler
@@ -21,6 +22,7 @@ func NewRouter(
 	bannerHandler *BannerHandler,
 	categoryHandler *CategoryHandler,
 	ebookHandler *EbookHandler,
+	summaryHandler *SummaryHandler,
 	userHandler *UserHandler,
 	paymentHandler *PaymentHandler,
 	oauth2Handler *OAuth2Handler,
@@ -30,6 +32,7 @@ func NewRouter(
 		bannerHandler: bannerHandler,
 		categoryHandler: categoryHandler,
 		ebookHandler:    ebookHandler,
+		summaryHandler:  summaryHandler,
 		userHandler:     userHandler,
 		paymentHandler:  paymentHandler,
 		oauth2Handler:   oauth2Handler,
@@ -65,6 +68,16 @@ func (r *Router) SetupRoutes() *http.ServeMux {
 	// Ebook routes
 	mux.HandleFunc("/ebooks", r.ebookHandler.ListEbooks)
 	mux.HandleFunc("/ebooks/{id}", r.ebookHandler.GetEbookByID)
+
+	// Summary routes
+	mux.HandleFunc("/summaries", r.summaryHandler.ListSummaries)
+	mux.HandleFunc("/summaries/{id}", r.summaryHandler.GetSummaryByID)
+	mux.HandleFunc("/summaries/ebook/{ebookID}", r.summaryHandler.GetSummariesByEbookID)
+	
+	// Protected summary routes (admin only)
+	mux.Handle("/summaries/create", r.authMiddleware.Authenticate(http.HandlerFunc(r.summaryHandler.CreateSummary)))
+	mux.Handle("/summaries/edit/{id}", r.authMiddleware.Authenticate(http.HandlerFunc(r.summaryHandler.UpdateSummary)))
+	mux.Handle("/summaries/delete/{id}", r.authMiddleware.Authenticate(http.HandlerFunc(r.summaryHandler.DeleteSummary)))
 
 	// OAuth2 routes
 	mux.HandleFunc("/oauth2/login", r.oauth2Handler.Login)

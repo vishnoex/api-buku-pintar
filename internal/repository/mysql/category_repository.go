@@ -117,7 +117,7 @@ func (r *categoryRepository) Delete(ctx context.Context, id string) error {
 }
 
 func (r *categoryRepository) List(ctx context.Context, limit, offset int) ([]*entity.Category, error) {
-	query := `SELECT id, name, description, icon_link, parent_id, order_number, is_active, created_at, updated_at 
+	query := `SELECT id, name, description, icon_link, slug, parent_id, order_number, is_active, created_at, updated_at 
 		FROM categories ORDER BY order_number ASC, created_at DESC LIMIT ? OFFSET ?`
 
 	rows, err := r.db.QueryContext(ctx, query, limit, offset)
@@ -134,6 +134,7 @@ func (r *categoryRepository) List(ctx context.Context, limit, offset int) ([]*en
 			&category.Name,
 			&category.Description,
 			&category.IconLink,
+			&category.Slug,
 			&category.ParentID,
 			&category.OrderNumber,
 			&category.IsActive,
@@ -154,7 +155,7 @@ func (r *categoryRepository) List(ctx context.Context, limit, offset int) ([]*en
 }
 
 func (r *categoryRepository) ListActive(ctx context.Context, limit, offset int) ([]*entity.Category, error) {
-	query := `SELECT id, name, description, icon_link, parent_id, order_number, is_active, created_at, updated_at 
+	query := `SELECT id, name, description, icon_link, slug, parent_id, order_number, is_active, created_at, updated_at 
 		FROM categories WHERE is_active = true ORDER BY order_number ASC, created_at DESC LIMIT ? OFFSET ?`
 
 	rows, err := r.db.QueryContext(ctx, query, limit, offset)
@@ -171,6 +172,7 @@ func (r *categoryRepository) ListActive(ctx context.Context, limit, offset int) 
 			&category.Name,
 			&category.Description,
 			&category.IconLink,
+			&category.Slug,
 			&category.ParentID,
 			&category.OrderNumber,
 			&category.IsActive,

@@ -5,6 +5,7 @@ import (
 	"buku-pintar/internal/domain/repository"
 	"context"
 	"database/sql"
+	"log"
 	"time"
 )
 
@@ -157,17 +158,19 @@ func (r *ebookRepository) Delete(ctx context.Context, id string) error {
 }
 
 func (r *ebookRepository) List(ctx context.Context, limit, offset int) ([]*entity.EbookList, error) {
+	now := time.Now().Format("2006-01-02 15:04:05")
 	query := `SELECT
 				e.id, e.title, e.slug, e.cover_image, e.price, ed.discount_price AS discount
 			FROM ebooks e
 			LEFT JOIN content_statuses cs ON cs.id = e.content_status_id
 			LEFT JOIN
 				ebook_discounts ed
-					ON ed.ebook_id = e.id AND ed.started_at <= "2025-08-08 11:11:11" AND ed.ended_at >= "2025-08-08 11:11:11" 
-			WHERE e.published_at IS NOT NULL AND e.published_at <= "2025-08-08 11:11:11" AND cs.name = "published"
+					ON ed.ebook_id = e.id AND ed.started_at <= ? AND ed.ended_at >= ? 
+			WHERE e.published_at IS NOT NULL AND e.published_at <= ? AND cs.name = "published"
 			ORDER BY e.published_at DESC LIMIT ? OFFSET ?`
 
-	rows, err := r.db.QueryContext(ctx, query, limit, offset)
+	rows, err := r.db.QueryContext(ctx, query, now, now, now, limit, offset)
+	log.Println(now)
 	if err != nil {
 		return nil, err
 	}

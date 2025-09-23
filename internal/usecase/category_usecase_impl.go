@@ -5,6 +5,7 @@ import (
 	"buku-pintar/internal/domain/entity"
 	"buku-pintar/internal/domain/service"
 	"context"
+	"log"
 )
 
 type categoryUsecase struct {
@@ -27,6 +28,7 @@ func (uc *categoryUsecase) ListCategory(ctx context.Context, limit, offset int) 
 	// Convert entities to response DTOs
 	var response []*response.CategoryResponse
 	for _, category := range categories {
+		log.Println(category.Slug)
 		categoryResponse := uc.convertEntityToResponse(category)
 		response = append(response, &categoryResponse)
 	}
