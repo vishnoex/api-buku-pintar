@@ -32,10 +32,7 @@ func (s *SummaryServiceImpl) CreateSummary(ctx context.Context, summary *entity.
 	}
 
 	// Clear related caches
-	if err := s.summaryRedisRepository.ClearCache(ctx); err != nil {
-		// Log error but don't fail the operation since cache clearing is not critical
-		// TODO: Add proper logging here
-	}
+	_ = s.summaryRedisRepository.ClearCache(ctx)
 
 	return nil
 }
@@ -55,10 +52,7 @@ func (s *SummaryServiceImpl) GetSummaryByID(ctx context.Context, id string) (*en
 
 	// Cache the result
 	if summary != nil {
-		if err := s.summaryRedisRepository.SetSummaryByID(ctx, id, summary); err != nil {
-			// Log error but don't fail the operation since caching is not critical
-			// TODO: Add proper logging here
-		}
+		_ = s.summaryRedisRepository.SetSummaryByID(ctx, id, summary)
 	}
 
 	return summary, nil
@@ -72,10 +66,7 @@ func (s *SummaryServiceImpl) UpdateSummary(ctx context.Context, summary *entity.
 	}
 
 	// Clear related caches
-	if err := s.summaryRedisRepository.ClearCache(ctx); err != nil {
-		// Log error but don't fail the operation since cache clearing is not critical
-		// TODO: Add proper logging here
-	}
+	_ = s.summaryRedisRepository.ClearCache(ctx)
 
 	return nil
 }
@@ -88,10 +79,7 @@ func (s *SummaryServiceImpl) DeleteSummary(ctx context.Context, id string) error
 	}
 
 	// Clear related caches
-	if err := s.summaryRedisRepository.ClearCache(ctx); err != nil {
-		// Log error but don't fail the operation since cache clearing is not critical
-		// TODO: Add proper logging here
-	}
+	_ = s.summaryRedisRepository.ClearCache(ctx)
 
 	return nil
 }
@@ -112,10 +100,7 @@ func (s *SummaryServiceImpl) ListSummaries(ctx context.Context, limit, offset in
 
 	// Cache the result
 	if summaries != nil {
-		if err := s.summaryRedisRepository.SetSummariesList(ctx, limit, offset, summaries); err != nil {
-			// Log error but don't fail the operation since caching is not critical
-			// TODO: Add proper logging here
-		}
+		_ = s.summaryRedisRepository.SetSummariesList(ctx, limit, offset, summaries)
 	}
 
 	// Convert entity to response
@@ -137,10 +122,7 @@ func (s *SummaryServiceImpl) GetSummariesByEbookID(ctx context.Context, ebookID 
 
 	// Cache the result
 	if summaries != nil {
-		if err := s.summaryRedisRepository.SetSummariesByEbookID(ctx, ebookID, limit, offset, summaries); err != nil {
-			// Log error but don't fail the operation since caching is not critical
-			// TODO: Add proper logging here
-		}
+		_ = s.summaryRedisRepository.SetSummariesByEbookID(ctx, ebookID, limit, offset, summaries)
 	}
 
 	return summaries, nil
@@ -160,10 +142,7 @@ func (s *SummaryServiceImpl) CountSummaries(ctx context.Context) (int64, error) 
 	}
 
 	// Cache the result
-	if err := s.summaryRedisRepository.SetSummariesCount(ctx, count); err != nil {
-		// Log error but don't fail the operation since caching is not critical
-		// TODO: Add proper logging here
-	}
+	_ = s.summaryRedisRepository.SetSummariesCount(ctx, count)
 
 	return count, nil
 }
@@ -182,10 +161,7 @@ func (s *SummaryServiceImpl) CountSummariesByEbookID(ctx context.Context, ebookI
 	}
 
 	// Cache the result
-	if err := s.summaryRedisRepository.SetSummariesCountByEbookID(ctx, ebookID, count); err != nil {
-		// Log error but don't fail the operation since caching is not critical
-		// TODO: Add proper logging here
-	}
+	_ = s.summaryRedisRepository.SetSummariesCountByEbookID(ctx, ebookID, count)
 
 	return count, nil
 }
