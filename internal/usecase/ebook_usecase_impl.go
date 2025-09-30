@@ -11,12 +11,14 @@ import (
 
 type ebookUsecase struct {
 	ebookService service.EbookService
+	ebookDiscountService service.EbookDiscountService
 }
 
 // NewEbookUsecase creates a new instance of EbookUsecase
-func NewEbookUsecase(ebookService service.EbookService) EbookUsecase {
+func NewEbookUsecase(ebookService service.EbookService, ebookDiscountService service.EbookDiscountService) EbookUsecase {
 	return &ebookUsecase{
 		ebookService: ebookService,
+		ebookDiscountService: ebookDiscountService,
 	}
 }
 
@@ -55,12 +57,27 @@ func (u *ebookUsecase) GetEbookByID(ctx context.Context, id string) (*entity.Ebo
 	return u.ebookService.GetEbookByID(ctx, id)
 }
 
-func (u *ebookUsecase) GetEbookBySlug(ctx context.Context, slug string) (*entity.Ebook, error) {
+func (u *ebookUsecase) GetEbookBySlug(ctx context.Context, slug string) (*response.EbookResponse, error) {
 	if slug == "" {
 		return nil, errors.New("slug is required")
 	}
 
-	return u.ebookService.GetEbookBySlug(ctx, slug)
+	ebook, err := u.ebookService.GetEbookBySlug(ctx, slug)
+	if err != nil {
+		return nil, err
+	}
+
+	if ebook == nil {
+		return nil, nil
+	}
+
+	res := response.ParseEbookResponse(ebook)
+	discount, _ := u.ebookDiscountService.GetActiveDiscountByEbookID(ctx, ebook.ID)
+	if discount != nil {
+		res.Discount = response.ParseDiscountResponse(discount)
+	}
+
+	return res, nil
 }
 
 func (u *ebookUsecase) UpdateEbook(ctx context.Context, ebook *entity.Ebook) error {

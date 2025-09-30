@@ -64,7 +64,7 @@ func (s *ebookService) GetEbookByID(ctx context.Context, id string) (*entity.Ebo
 	return ebook, nil
 }
 
-func (s *ebookService) GetEbookBySlug(ctx context.Context, slug string) (*entity.Ebook, error) {
+func (s *ebookService) GetEbookBySlug(ctx context.Context, slug string) (*entity.EbookDetail, error) {
 	// Try to get from cache first
 	cachedEbook, err := s.ebookRedisRepo.GetEbookBySlug(ctx, slug)
 	if err == nil && cachedEbook != nil {

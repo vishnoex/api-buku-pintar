@@ -20,6 +20,7 @@ import (
 type MockEbookUsecase struct {
 	ebooks []*entity.Ebook
 	ebook  *entity.Ebook
+	ebookDetail *entity.EbookDetail
 	err    error
 }
 
@@ -31,8 +32,14 @@ func (m *MockEbookUsecase) GetEbookByID(ctx context.Context, id string) (*entity
 	return m.ebook, m.err
 }
 
-func (m *MockEbookUsecase) GetEbookBySlug(ctx context.Context, slug string) (*entity.Ebook, error) {
-	return m.ebook, m.err
+func (m *MockEbookUsecase) GetEbookBySlug(ctx context.Context, slug string) (*response.EbookResponse, error) {
+	if m.err != nil {
+		return nil, m.err
+	}
+	if m.ebookDetail == nil {
+		return nil, nil
+	}
+	return response.ParseEbookResponse(m.ebookDetail), nil
 }
 
 func (m *MockEbookUsecase) UpdateEbook(ctx context.Context, ebook *entity.Ebook) error {
@@ -144,7 +151,7 @@ func TestEbookHandler_ListEbooks(t *testing.T) {
 			handler := NewEbookHandler(mockUsecase)
 
 			// Create request
-			req, err := http.NewRequest("GET", "/api/ebooks", nil)
+			req, err := http.NewRequest("GET", "/ebooks", nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -254,7 +261,7 @@ func TestEbookHandler_GetEbookByID(t *testing.T) {
 			handler := NewEbookHandler(mockUsecase)
 
 			// Create request
-			req, err := http.NewRequest("GET", "/api/ebooks/"+tt.ebookID, nil)
+			req, err := http.NewRequest("GET", "/ebooks/"+tt.ebookID, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -373,7 +380,7 @@ func TestEbookHandler_CreateEbook(t *testing.T) {
 			}
 
 			// Create request
-			req, err := http.NewRequest("POST", "/api/ebooks", bytes.NewBuffer(body))
+			req, err := http.NewRequest("POST", "/ebooks", bytes.NewBuffer(body))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -427,7 +434,7 @@ func TestEbookHandler_GetEbookBySlug(t *testing.T) {
 	tests := []struct {
 		name           string
 		slug           string
-		mockEbook      *entity.Ebook
+		mockEbook      *entity.EbookDetail
 		mockError      error
 		expectedStatus int
 		expectedFound  bool
@@ -435,11 +442,10 @@ func TestEbookHandler_GetEbookBySlug(t *testing.T) {
 		{
 			name: "should return ebook by slug successfully",
 			slug: "test-ebook",
-			mockEbook: &entity.Ebook{
+			mockEbook: &entity.EbookDetail{
 				ID:         "ebook-1",
 				Title:      "Test Ebook",
 				AuthorID:   "author-1",
-				CategoryID: "category-1",
 				Slug:       "test-ebook",
 				Price:      1000,
 				Language:   "en",
@@ -472,7 +478,7 @@ func TestEbookHandler_GetEbookBySlug(t *testing.T) {
 			slug:           "",
 			mockEbook:      nil,
 			mockError:      nil,
-			expectedStatus: http.StatusNotFound,
+			expectedStatus: http.StatusBadRequest,
 			expectedFound:  false,
 		},
 	}
@@ -481,13 +487,13 @@ func TestEbookHandler_GetEbookBySlug(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Arrange
 			mockUsecase := &MockEbookUsecase{
-				ebook: tt.mockEbook,
-				err:   tt.mockError,
+				ebookDetail: tt.mockEbook,
+				err:        tt.mockError,
 			}
 			handler := NewEbookHandler(mockUsecase)
 
 			// Create request
-			req, err := http.NewRequest("GET", "/api/ebooks/"+tt.slug, nil)
+			req, err := http.NewRequest("GET", "/ebooks/slug/"+tt.slug, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -589,15 +595,9 @@ func TestEbookHandler_UpdateEbook(t *testing.T) {
 		{
 			name:    "should return 400 when ID is empty",
 			ebookID: "",
-			ebook: &entity.Ebook{
-				ID:         "",
-				Title:      "Updated Test Ebook",
-				AuthorID:   "author-1",
-				CategoryID: "category-1",
-				Slug:       "updated-test-ebook",
-			},
+			ebook: nil,
 			mockError:      nil,
-			expectedStatus: http.StatusOK,
+			expectedStatus: http.StatusBadRequest,
 		},
 	}
 
@@ -616,7 +616,7 @@ func TestEbookHandler_UpdateEbook(t *testing.T) {
 			}
 
 			// Create request
-			req, err := http.NewRequest("PUT", "/api/ebooks/"+tt.ebookID, bytes.NewBuffer(body))
+			req, err := http.NewRequest("PUT", "/ebooks/"+tt.ebookID, bytes.NewBuffer(body))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -683,7 +683,7 @@ func TestEbookHandler_DeleteEbook(t *testing.T) {
 			name:           "should return 400 when ID is empty",
 			ebookID:        "",
 			mockError:      nil,
-			expectedStatus: http.StatusOK,
+			expectedStatus: http.StatusBadRequest,
 		},
 		{
 			name:           "should return 400 when validation fails",
@@ -708,7 +708,7 @@ func TestEbookHandler_DeleteEbook(t *testing.T) {
 			handler := NewEbookHandler(mockUsecase)
 
 			// Create request
-			req, err := http.NewRequest("DELETE", "/api/ebooks/"+tt.ebookID, nil)
+			req, err := http.NewRequest("DELETE", "/ebooks/"+tt.ebookID, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -821,7 +821,7 @@ func TestEbookHandler_ListEbooksByCategory(t *testing.T) {
 			handler := NewEbookHandler(mockUsecase)
 
 			// Create request
-			req, err := http.NewRequest("GET", "/api/ebooks/category/"+tt.categoryID, nil)
+			req, err := http.NewRequest("GET", "/ebooks/category/"+tt.categoryID, nil)
 			if err != nil {
 				t.Fatal(err)
 			}

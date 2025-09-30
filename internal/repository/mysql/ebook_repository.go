@@ -85,11 +85,20 @@ func (r *ebookRepository) GetByID(ctx context.Context, id string) (*entity.Ebook
 	return ebook, nil
 }
 
-func (r *ebookRepository) GetBySlug(ctx context.Context, slug string) (*entity.Ebook, error) {
-	query := `SELECT id, author_id, title, synopsis, slug, cover_image, category_id, content_status_id, price, language, duration, filesize, format, page_count, preview_page, url, published_at, created_at, updated_at 
-		FROM ebooks WHERE slug = ?`
+func (r *ebookRepository) GetBySlug(ctx context.Context, slug string) (*entity.EbookDetail, error) {
+	query := `SELECT
+				e.id as id, e.author_id, e.title, e.synopsis, e.slug, e.cover_image, e.price,
+				e.language, e.duration, e.filesize, e.format, e.page_count, e.preview_page, e.url,
+				e.published_at, e.created_at, e.updated_at, a.name as author_name, a.avatar as author_avatar,
+				cs.name as content_status, es.id as summary_id, es.description as summary_content,
+				es.audio_url as summary_audio_url, es.duration as summary_duration
+		FROM ebooks e
+		LEFT JOIN authors a ON a.id = e.author_id
+		LEFT JOIN ebook_summaries es ON es.ebook_id = e.id
+		LEFT JOIN content_statuses cs ON cs.id = e.content_status_id
+		WHERE e.slug = ? AND cs.name = "published"`
 
-	ebook := &entity.Ebook{}
+	ebook := &entity.EbookDetail{}
 	err := r.db.QueryRowContext(ctx, query, slug).Scan(
 		&ebook.ID,
 		&ebook.AuthorID,
@@ -97,8 +106,6 @@ func (r *ebookRepository) GetBySlug(ctx context.Context, slug string) (*entity.E
 		&ebook.Synopsis,
 		&ebook.Slug,
 		&ebook.CoverImage,
-		&ebook.CategoryID,
-		&ebook.ContentStatusID,
 		&ebook.Price,
 		&ebook.Language,
 		&ebook.Duration,
@@ -110,6 +117,13 @@ func (r *ebookRepository) GetBySlug(ctx context.Context, slug string) (*entity.E
 		&ebook.PublishedAt,
 		&ebook.CreatedAt,
 		&ebook.UpdatedAt,
+		&ebook.AuthorName,
+		&ebook.AuthorAvatar,
+		&ebook.ContentStatus,
+		&ebook.SummaryID,
+		&ebook.SummaryContent,
+		&ebook.SummaryAudioURL,
+		&ebook.SummaryDuration,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {

@@ -133,11 +133,16 @@ func main() {
 	// Initialize auth middleware
 	authMiddleware := middleware.NewAuthMiddleware(fb.Auth(), oauth2Service)
 
+	// Initialize ebook discount dependencies
+	ebookDiscountRepo := mysql.NewEbookDiscountRepository(db)
+	ebookDiscountRedisRepo := redis.NewEbookDiscountRedisRepository(cRedis)
+	ebookDiscountService := service.NewEbookDiscountService(ebookDiscountRepo, ebookDiscountRedisRepo)
+
 	// Initialize ebook dependencies
 	ebookRepo := mysql.NewEbookRepository(db)
 	ebookRedisRepo := redis.NewEbookRedisRepository(cRedis)
 	ebookService := service.NewEbookService(ebookRepo, ebookRedisRepo)
-	ebookUsecase := usecase.NewEbookUsecase(ebookService)
+	ebookUsecase := usecase.NewEbookUsecase(ebookService, ebookDiscountService)
 	ebookHandler := http.NewEbookHandler(ebookUsecase)
 
 	// Initialize summary dependencies

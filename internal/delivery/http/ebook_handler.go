@@ -81,7 +81,7 @@ func (h *EbookHandler) GetEbookBySlug(w http.ResponseWriter, r *http.Request) {
 		response.WriteError(w, http.StatusBadRequest, "invalid_url_path", constant.INVALID_URL_PATH)
 		return
 	}
-	slug := pathParts[2]
+	slug := pathParts[3]
 
 	if slug == "" {
 		response.WriteError(w, http.StatusBadRequest, "slug_required", "slug is required")

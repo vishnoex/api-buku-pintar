@@ -10,7 +10,7 @@ import (
 type EbookUsecase interface {
 	CreateEbook(ctx context.Context, ebook *entity.Ebook) error
 	GetEbookByID(ctx context.Context, id string) (*entity.Ebook, error)
-	GetEbookBySlug(ctx context.Context, slug string) (*entity.Ebook, error)
+	GetEbookBySlug(ctx context.Context, slug string) (*response.EbookResponse, error)
 	UpdateEbook(ctx context.Context, ebook *entity.Ebook) error
 	DeleteEbook(ctx context.Context, id string) error
 	ListEbooks(ctx context.Context, limit, offset int) ([]*response.EbookListResponse, error)

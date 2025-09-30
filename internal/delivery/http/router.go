@@ -2,6 +2,7 @@ package http
 
 import (
 	"buku-pintar/internal/delivery/http/middleware"
+	"buku-pintar/internal/delivery/http/response"
 	"net/http"
 )
 
@@ -40,6 +41,11 @@ func NewRouter(
 	}
 }
 
+// NotFoundHandler handles 404 Not Found responses for unmatched routes
+func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
+	response.WriteError(w, http.StatusNotFound, "page_not_found", "The requested page was not found")
+}
+
 // SetupRoutes configures all routes and returns the configured mux
 func (r *Router) SetupRoutes() *http.ServeMux {
 	mux := &http.ServeMux{}
@@ -68,6 +74,7 @@ func (r *Router) SetupRoutes() *http.ServeMux {
 	// Ebook routes
 	mux.HandleFunc("/ebooks", r.ebookHandler.ListEbooks)
 	mux.HandleFunc("/ebooks/{id}", r.ebookHandler.GetEbookByID)
+	mux.HandleFunc("/ebooks/slug/{slug}", r.ebookHandler.GetEbookBySlug)
 
 	// Summary routes
 	mux.HandleFunc("/summaries", r.summaryHandler.ListSummaries)
@@ -94,6 +101,9 @@ func (r *Router) SetupRoutes() *http.ServeMux {
 	mux.Handle("/users/update", r.authMiddleware.Authenticate(http.HandlerFunc(r.userHandler.UpdateUser)))
 	mux.Handle("/users/delete", r.authMiddleware.Authenticate(http.HandlerFunc(r.userHandler.DeleteUser)))
 	mux.Handle("/payments/initiate", r.authMiddleware.Authenticate(http.HandlerFunc(r.paymentHandler.InitiatePayment)))
+
+	// Catch-all handler for unmatched routes (404)
+	mux.HandleFunc("/", NotFoundHandler)
 
 	return mux
 }

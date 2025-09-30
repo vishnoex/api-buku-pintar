@@ -106,7 +106,7 @@ func (r *ebookRedisRepository) SetEbookByID(ctx context.Context, ebook *entity.E
 	return r.client.Set(ctx, key, data, 15*time.Minute).Err()
 }
 
-func (r *ebookRedisRepository) GetEbookBySlug(ctx context.Context, slug string) (*entity.Ebook, error) {
+func (r *ebookRedisRepository) GetEbookBySlug(ctx context.Context, slug string) (*entity.EbookDetail, error) {
 	key := fmt.Sprintf("ebook:slug:%s", slug)
 	
 	data, err := r.client.Get(ctx, key).Result()
@@ -117,7 +117,7 @@ func (r *ebookRedisRepository) GetEbookBySlug(ctx context.Context, slug string) 
 		return nil, err
 	}
 
-	var ebook entity.Ebook
+	var ebook entity.EbookDetail
 	err = json.Unmarshal([]byte(data), &ebook)
 	if err != nil {
 		return nil, err
@@ -126,7 +126,7 @@ func (r *ebookRedisRepository) GetEbookBySlug(ctx context.Context, slug string) 
 	return &ebook, nil
 }
 
-func (r *ebookRedisRepository) SetEbookBySlug(ctx context.Context, ebook *entity.Ebook) error {
+func (r *ebookRedisRepository) SetEbookBySlug(ctx context.Context, ebook *entity.EbookDetail) error {
 	key := fmt.Sprintf("ebook:slug:%s", ebook.Slug)
 	
 	data, err := json.Marshal(ebook)

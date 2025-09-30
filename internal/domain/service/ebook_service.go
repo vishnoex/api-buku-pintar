@@ -9,7 +9,7 @@ import (
 type EbookService interface {
 	CreateEbook(ctx context.Context, ebook *entity.Ebook) error
 	GetEbookByID(ctx context.Context, id string) (*entity.Ebook, error)
-	GetEbookBySlug(ctx context.Context, slug string) (*entity.Ebook, error)
+	GetEbookBySlug(ctx context.Context, slug string) (*entity.EbookDetail, error)
 	UpdateEbook(ctx context.Context, ebook *entity.Ebook) error
 	DeleteEbook(ctx context.Context, id string) error
 	GetEbookList(ctx context.Context, limit, offset int) ([]*entity.EbookList, error)

@@ -14,6 +14,7 @@ type MockEbookRepository struct {
 	ebooks    []*entity.Ebook
 	ebookList []*entity.EbookList
 	ebook     *entity.Ebook
+	ebookDetail *entity.EbookDetail
 	err       error
 	count     int64
 }
@@ -26,8 +27,8 @@ func (m *MockEbookRepository) GetByID(ctx context.Context, id string) (*entity.E
 	return m.ebook, m.err
 }
 
-func (m *MockEbookRepository) GetBySlug(ctx context.Context, slug string) (*entity.Ebook, error) {
-	return m.ebook, m.err
+func (m *MockEbookRepository) GetBySlug(ctx context.Context, slug string) (*entity.EbookDetail, error) {
+	return m.ebookDetail, m.err
 }
 
 func (m *MockEbookRepository) Update(ctx context.Context, ebook *entity.Ebook) error {
@@ -67,6 +68,7 @@ type MockEbookRedisRepository struct {
 	ebooks    []*entity.Ebook
 	ebookList []*entity.EbookList
 	ebook     *entity.Ebook
+	ebookDetail *entity.EbookDetail
 	err       error
 	count     int64
 	cacheHit  bool
@@ -105,14 +107,14 @@ func (m *MockEbookRedisRepository) SetEbookByID(ctx context.Context, ebook *enti
 	return m.err
 }
 
-func (m *MockEbookRedisRepository) GetEbookBySlug(ctx context.Context, slug string) (*entity.Ebook, error) {
+func (m *MockEbookRedisRepository) GetEbookBySlug(ctx context.Context, slug string) (*entity.EbookDetail, error) {
 	if m.cacheHit {
-		return m.ebook, nil
+		return m.ebookDetail, nil
 	}
 	return nil, m.err
 }
 
-func (m *MockEbookRedisRepository) SetEbookBySlug(ctx context.Context, ebook *entity.Ebook) error {
+func (m *MockEbookRedisRepository) SetEbookBySlug(ctx context.Context, ebook *entity.EbookDetail) error {
 	return m.err
 }
 

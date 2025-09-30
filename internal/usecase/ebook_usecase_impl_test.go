@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"buku-pintar/internal/domain/entity"
+	"buku-pintar/internal/domain/service"
 	"context"
 	"errors"
 	"testing"
@@ -15,14 +16,103 @@ type MockEbookService struct {
 	ebooks        []*entity.Ebook
 	ebookList     []*entity.EbookList
 	ebook         *entity.Ebook
+	ebookDetail   *entity.EbookDetail
 	err           error
 	count         int64
 	createFunc    func(ctx context.Context, ebook *entity.Ebook) error
 	listFunc      func(ctx context.Context, limit, offset int) ([]*entity.EbookList, error)
 	getByIDFunc   func(ctx context.Context, id string) (*entity.Ebook, error)
-	getBySlugFunc func(ctx context.Context, slug string) (*entity.Ebook, error)
+	getBySlugFunc func(ctx context.Context, slug string) (*entity.EbookDetail, error)
 	// For testing specific scenarios
-	existingBySlug *entity.Ebook
+	existingBySlug *entity.EbookDetail
+}
+
+type MockEbookDiscountService struct {
+	discountList []*entity.EbookDiscount
+	discount     *entity.EbookDiscount
+	err          error
+	count        int64
+	createFunc   func(ctx context.Context, discount *entity.EbookDiscount) error
+	listFunc     func(ctx context.Context, limit, offset int) ([]*entity.EbookDiscount, error)
+	getByIDFunc  func(ctx context.Context, id string) (*entity.EbookDiscount, error)
+	getByEbookIDFunc func(ctx context.Context, ebookID string) ([]*entity.EbookDiscount, error)
+	getActiveDiscountsFunc func(ctx context.Context, limit, offset int) ([]*entity.EbookDiscount, error)
+	getActiveDiscountByEbookIDFunc func(ctx context.Context, ebookID string) (*entity.EbookDiscount, error)
+	countFunc func(ctx context.Context) (int64, error)
+	countByEbookIDFunc func(ctx context.Context, ebookID string) (int64, error)
+	countActiveDiscountsFunc func(ctx context.Context) (int64, error)
+}
+
+// Implement all EbookDiscountService interface methods
+func (m *MockEbookDiscountService) CreateDiscount(ctx context.Context, discount *entity.EbookDiscount) error {
+	if m.createFunc != nil {
+		return m.createFunc(ctx, discount)
+	}
+	return m.err
+}
+
+func (m *MockEbookDiscountService) GetDiscountByID(ctx context.Context, id string) (*entity.EbookDiscount, error) {
+	if m.getByIDFunc != nil {
+		return m.getByIDFunc(ctx, id)
+	}
+	return m.discount, m.err
+}
+
+func (m *MockEbookDiscountService) UpdateDiscount(ctx context.Context, discount *entity.EbookDiscount) error {
+	return m.err
+}
+
+func (m *MockEbookDiscountService) DeleteDiscount(ctx context.Context, id string) error {
+	return m.err
+}
+
+func (m *MockEbookDiscountService) GetDiscountList(ctx context.Context, limit, offset int) ([]*entity.EbookDiscount, error) {
+	if m.listFunc != nil {
+		return m.listFunc(ctx, limit, offset)
+	}
+	return m.discountList, m.err
+}
+
+func (m *MockEbookDiscountService) GetDiscountsByEbookID(ctx context.Context, ebookID string) ([]*entity.EbookDiscount, error) {
+	if m.getByEbookIDFunc != nil {
+		return m.getByEbookIDFunc(ctx, ebookID)
+	}
+	return m.discountList, m.err
+}
+
+func (m *MockEbookDiscountService) GetActiveDiscounts(ctx context.Context, limit, offset int) ([]*entity.EbookDiscount, error) {
+	if m.getActiveDiscountsFunc != nil {
+		return m.getActiveDiscountsFunc(ctx, limit, offset)
+	}
+	return m.discountList, m.err
+}
+
+func (m *MockEbookDiscountService) GetActiveDiscountByEbookID(ctx context.Context, ebookID string) (*entity.EbookDiscount, error) {
+	if m.getActiveDiscountByEbookIDFunc != nil {
+		return m.getActiveDiscountByEbookIDFunc(ctx, ebookID)
+	}
+	return m.discount, m.err
+}
+
+func (m *MockEbookDiscountService) GetDiscountCount(ctx context.Context) (int64, error) {
+	if m.countFunc != nil {
+		return m.countFunc(ctx)
+	}
+	return m.count, m.err
+}
+
+func (m *MockEbookDiscountService) GetDiscountCountByEbookID(ctx context.Context, ebookID string) (int64, error) {
+	if m.countByEbookIDFunc != nil {
+		return m.countByEbookIDFunc(ctx, ebookID)
+	}
+	return m.count, m.err
+}
+
+func (m *MockEbookDiscountService) GetActiveDiscountCount(ctx context.Context) (int64, error) {
+	if m.countActiveDiscountsFunc != nil {
+		return m.countActiveDiscountsFunc(ctx)
+	}
+	return m.count, m.err
 }
 
 func (m *MockEbookService) CreateEbook(ctx context.Context, ebook *entity.Ebook) error {
@@ -39,14 +129,14 @@ func (m *MockEbookService) GetEbookByID(ctx context.Context, id string) (*entity
 	return m.ebook, m.err
 }
 
-func (m *MockEbookService) GetEbookBySlug(ctx context.Context, slug string) (*entity.Ebook, error) {
+func (m *MockEbookService) GetEbookBySlug(ctx context.Context, slug string) (*entity.EbookDetail, error) {
 	if m.getBySlugFunc != nil {
 		return m.getBySlugFunc(ctx, slug)
 	}
 	if m.existingBySlug != nil {
 		return m.existingBySlug, m.err
 	}
-	return m.ebook, m.err
+	return m.ebookDetail, m.err
 }
 
 func (m *MockEbookService) UpdateEbook(ctx context.Context, ebook *entity.Ebook) error {
@@ -84,12 +174,19 @@ func (m *MockEbookService) GetEbookCountByAuthor(ctx context.Context, authorID s
 	return m.count, m.err
 }
 
+// Ensure MockEbookService implements service.EbookService interface
+var _ service.EbookService = (*MockEbookService)(nil)
+
+// Ensure MockEbookDiscountService implements service.EbookDiscountService interface
+var _ service.EbookDiscountService = (*MockEbookDiscountService)(nil)
+
 func TestEbookUsecase_ListEbooks(t *testing.T) {
 	tests := []struct {
 		name           string
 		limit          int
 		offset         int
 		mockEbookList  []*entity.EbookList
+		mockDiscountList []*entity.EbookDiscount
 		mockError      error
 		expectedLength int
 		expectedError  bool
@@ -167,12 +264,16 @@ func TestEbookUsecase_ListEbooks(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-					// Arrange
-		mockRepo := &MockEbookService{
-			ebookList: tt.mockEbookList,
-			err:    tt.mockError,
-		}
-		usecase := NewEbookUsecase(mockRepo)
+			// Arrange
+			mockRepo := &MockEbookService{
+				ebookList: tt.mockEbookList,
+				err:       tt.mockError,
+			}
+			mockRepoDiscount := &MockEbookDiscountService{
+				discountList: tt.mockDiscountList,
+				err:       tt.mockError,
+			}
+			usecase := NewEbookUsecase(mockRepo, mockRepoDiscount)
 			ctx := context.Background()
 
 			// Act
@@ -202,6 +303,7 @@ func TestEbookUsecase_ListEbooksByCategory(t *testing.T) {
 		limit          int
 		offset         int
 		mockEbooks     []*entity.Ebook
+		mockDiscountList []*entity.EbookDiscount
 		mockError      error
 		expectedLength int
 		expectedError  bool
@@ -267,7 +369,11 @@ func TestEbookUsecase_ListEbooksByCategory(t *testing.T) {
 				ebooks: tt.mockEbooks,
 				err:    tt.mockError,
 			}
-			usecase := NewEbookUsecase(mockRepo)
+			mockRepoDiscount := &MockEbookDiscountService{
+				discountList: tt.mockDiscountList,
+				err:       tt.mockError,
+			}
+			usecase := NewEbookUsecase(mockRepo, mockRepoDiscount)
 			ctx := context.Background()
 
 			// Act
@@ -295,6 +401,7 @@ func TestEbookUsecase_GetEbookByID(t *testing.T) {
 		name          string
 		ebookID       string
 		mockEbook     *entity.Ebook
+		mockDiscount  *entity.EbookDiscount
 		mockError     error
 		expectedFound bool
 		expectedError bool
@@ -350,7 +457,11 @@ func TestEbookUsecase_GetEbookByID(t *testing.T) {
 				ebook: tt.mockEbook,
 				err:   tt.mockError,
 			}
-			usecase := NewEbookUsecase(mockRepo)
+			mockRepoDiscount := &MockEbookDiscountService{
+				discount: tt.mockDiscount,
+				err:       tt.mockError,
+			}
+			usecase := NewEbookUsecase(mockRepo, mockRepoDiscount)
 			ctx := context.Background()
 
 			// Act
@@ -385,7 +496,8 @@ func TestEbookUsecase_GetEbookBySlug(t *testing.T) {
 	tests := []struct {
 		name          string
 		slug          string
-		mockEbook     *entity.Ebook
+		mockEbook     *entity.EbookDetail
+		mockDiscount  *entity.EbookDiscount
 		mockError     error
 		expectedFound bool
 		expectedError bool
@@ -393,12 +505,11 @@ func TestEbookUsecase_GetEbookBySlug(t *testing.T) {
 		{
 			name: "should return ebook by slug successfully",
 			slug: "test-ebook",
-			mockEbook: &entity.Ebook{
+			mockEbook: &entity.EbookDetail{
 				ID:         "ebook-1",
 				Title:      "Test Ebook",
 				Slug:       "test-ebook",
 				AuthorID:   "author-1",
-				CategoryID: "category-1",
 				Price:      1000,
 				Language:   "en",
 				Format:     entity.FormatPDF,
@@ -439,10 +550,14 @@ func TestEbookUsecase_GetEbookBySlug(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Arrange
 			mockRepo := &MockEbookService{
-				ebook: tt.mockEbook,
-				err:   tt.mockError,
+				ebookDetail: tt.mockEbook,
+				err:        tt.mockError,
 			}
-			usecase := NewEbookUsecase(mockRepo)
+			mockRepoDiscount := &MockEbookDiscountService{
+				discount: tt.mockDiscount,
+				err:       tt.mockError,
+			}
+			usecase := NewEbookUsecase(mockRepo, mockRepoDiscount)
 			ctx := context.Background()
 
 			// Act
@@ -459,13 +574,13 @@ func TestEbookUsecase_GetEbookBySlug(t *testing.T) {
 				}
 				if tt.expectedFound {
 					if result == nil {
-						t.Errorf("expected ebook but got nil")
+						t.Errorf("expected ebook response but got nil")
 					} else if result.Slug != tt.slug {
 						t.Errorf("expected ebook slug %s, got %s", tt.slug, result.Slug)
 					}
 				} else {
 					if result != nil {
-						t.Errorf("expected nil but got ebook")
+						t.Errorf("expected nil but got ebook response")
 					}
 				}
 			}
@@ -477,8 +592,9 @@ func TestEbookUsecase_CreateEbook(t *testing.T) {
 	tests := []struct {
 		name          string
 		ebook         *entity.Ebook
+		mockDiscount  *entity.EbookDiscount
 		mockError     error
-		mockExisting  *entity.Ebook
+		mockExisting  *entity.EbookDetail
 		expectedError bool
 	}{
 		{
@@ -559,7 +675,7 @@ func TestEbookUsecase_CreateEbook(t *testing.T) {
 				Slug:       "existing-ebook",
 			},
 			mockError: nil,
-			mockExisting: &entity.Ebook{
+			mockExisting: &entity.EbookDetail{
 				ID:   "existing-id",
 				Slug: "existing-ebook",
 			},
@@ -584,10 +700,14 @@ func TestEbookUsecase_CreateEbook(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Arrange
 			mockRepo := &MockEbookService{
-				ebook: tt.mockExisting,
-				err:   tt.mockError,
+				ebookDetail: tt.mockExisting,
+				err:        tt.mockError,
 			}
-			usecase := NewEbookUsecase(mockRepo)
+			mockRepoDiscount := &MockEbookDiscountService{
+				discount: tt.mockDiscount,
+				err:       tt.mockError,
+			}
+			usecase := NewEbookUsecase(mockRepo, mockRepoDiscount)
 			ctx := context.Background()
 
 			// Act
@@ -611,6 +731,7 @@ func TestEbookUsecase_UpdateEbook(t *testing.T) {
 	tests := []struct {
 		name          string
 		ebook         *entity.Ebook
+		mockDiscount  *entity.EbookDiscount
 		mockExisting  *entity.Ebook
 		mockError     error
 		expectedError bool
@@ -683,14 +804,27 @@ func TestEbookUsecase_UpdateEbook(t *testing.T) {
 				ebook: tt.mockExisting,
 				err:   tt.mockError,
 			}
+
+			mockRepoDiscount := &MockEbookDiscountService{
+				discount: tt.mockDiscount,
+				err:       tt.mockError,
+			}
 			// For update test, we need to handle the slug check differently
 			if tt.name == "should update ebook successfully" {
-				mockRepo.getBySlugFunc = func(ctx context.Context, slug string) (*entity.Ebook, error) {
+				mockRepo.getBySlugFunc = func(ctx context.Context, slug string) (*entity.EbookDetail, error) {
 					// Return nil for the new slug, indicating no existing ebook with that slug
 					return nil, nil
 				}
+			} else if tt.name == "should return error when new slug already exists" {
+				mockRepo.getBySlugFunc = func(ctx context.Context, slug string) (*entity.EbookDetail, error) {
+					// Return an existing ebook for the new slug, indicating conflict
+					return &entity.EbookDetail{
+						ID:   "other-ebook-id",
+						Slug: slug,
+					}, nil
+				}
 			}
-			usecase := NewEbookUsecase(mockRepo)
+			usecase := NewEbookUsecase(mockRepo, mockRepoDiscount)
 			ctx := context.Background()
 
 			// Act
@@ -715,6 +849,7 @@ func TestEbookUsecase_DeleteEbook(t *testing.T) {
 		name          string
 		ebookID       string
 		mockExisting  *entity.Ebook
+		mockDiscount  *entity.EbookDiscount
 		mockError     error
 		expectedError bool
 	}{
@@ -759,7 +894,11 @@ func TestEbookUsecase_DeleteEbook(t *testing.T) {
 				ebook: tt.mockExisting,
 				err:   tt.mockError,
 			}
-			usecase := NewEbookUsecase(mockRepo)
+			mockRepoDiscount := &MockEbookDiscountService{
+				discount: tt.mockDiscount,
+				err:       tt.mockError,
+			}
+			usecase := NewEbookUsecase(mockRepo, mockRepoDiscount)
 			ctx := context.Background()
 
 			// Act
