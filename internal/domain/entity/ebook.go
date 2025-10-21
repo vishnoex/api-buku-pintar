@@ -68,8 +68,8 @@ type EbookDetail struct {
 
 	ContentStatus *string `db:"content_status"`
 
-	SummaryID string `db:"summary_id"`
-	SummaryContent string `db:"summary_content"`
-	SummaryAudioURL string `db:"summary_audio_url"`
-	SummaryDuration int `db:"summary_duration"`
+	SummaryID *string `db:"summary_id"`
+	SummaryContent *string `db:"summary_content"`
+	SummaryAudioURL *string `db:"summary_audio_url"`
+	SummaryDuration *int `db:"summary_duration"`
 }

@@ -8,7 +8,6 @@ import (
 	"buku-pintar/internal/service"
 	"buku-pintar/internal/usecase"
 	"buku-pintar/pkg/config"
-	"buku-pintar/pkg/firebase"
 	"buku-pintar/pkg/oauth2"
 	"database/sql"
 	"fmt"
@@ -25,15 +24,6 @@ func main() {
 
 	// Load configuration
 	cfg, err := config.Load("./config.json")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Initialize Firebase
-	firebaseCfg := &firebase.Config{
-		CredentialsFile: cfg.Firebase.CredentialsFile,
-	}
-	fb, err := firebase.NewFirebase(firebaseCfg)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -117,7 +107,7 @@ func main() {
 
 	// Initialize user dependencies
 	userRepo := mysql.NewUserRepository(db)
-	userService := service.NewUserService(userRepo, fb.Auth())
+	userService := service.NewUserService(userRepo)
 	userUsecase := usecase.NewUserUsecase(userRepo, userService)
 	userHandler := http.NewUserHandler(userUsecase)
 
@@ -131,7 +121,20 @@ func main() {
 	paymentHandler := http.NewPaymentHandler(paymentUsecase)
 
 	// Initialize auth middleware
-	authMiddleware := middleware.NewAuthMiddleware(fb.Auth(), oauth2Service)
+	authMiddleware := middleware.NewAuthMiddleware(oauth2Service)
+
+	// Initialize role dependencies
+	roleRepo := mysql.NewRoleRepository(db)
+	roleRedisRepo := redis.NewRoleRedisRepository(cRedis)
+	roleService := service.NewRoleService(roleRepo, roleRedisRepo, userRepo)
+
+	// Initialize permission dependencies
+	permissionRepo := mysql.NewPermissionRepository(db)
+	permissionRedisRepo := redis.NewPermissionRedisRepository(cRedis)
+	permissionService := service.NewPermissionService(permissionRepo, permissionRedisRepo)
+
+	// Initialize role middleware
+	roleMiddleware := middleware.NewRoleMiddleware(roleService, permissionService)
 
 	// Initialize ebook discount dependencies
 	ebookDiscountRepo := mysql.NewEbookDiscountRepository(db)
@@ -149,11 +152,12 @@ func main() {
 	summaryRepo := mysql.NewSummaryRepositoryImpl(db)
 	summaryRedisRepo := redis.NewSummaryRedisRepositoryImpl(cRedis)
 	summaryService := service.NewSummaryServiceImpl(summaryRepo, summaryRedisRepo)
-	summaryUsecase := usecase.NewSummaryUsecaseImpl(summaryService)
-	summaryHandler := http.NewSummaryHandler(summaryUsecase)
+	summaryHandler := http.NewSummaryHandler(summaryService)
+	// Initialize router
+	router := http.NewRouter(bannerHandler, categoryHandler, ebookHandler, summaryHandler, userHandler, paymentHandler, oauth2Handler, authMiddleware, roleMiddleware)
 
 	// Initialize router
-	router := http.NewRouter(bannerHandler, categoryHandler, ebookHandler, summaryHandler, userHandler, paymentHandler, oauth2Handler, authMiddleware)
+	// router := http.NewRouter(bannerHandler, categoryHandler, ebookHandler, summaryHandler, userHandler, paymentHandler, oauth2Handler, authMiddleware)
 	mux := router.SetupRoutes()
 
 	// Start server

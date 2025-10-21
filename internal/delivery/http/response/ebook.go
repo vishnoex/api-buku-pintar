@@ -84,14 +84,14 @@ func ParseEbookResponse(ebook *entity.EbookDetail) *EbookResponse {
 		Discount:        nil,
 		TableOfContents: []*TableOfContentResponse{},
 		Summary: &EbookSummaryResponse{
-			ID:          ebook.SummaryID,
+			ID:          *ebook.SummaryID,
 			EbookID:     ebook.ID,
 			EbookTitle:  ebook.Title,
 			Slug:        ebook.Slug,
-			Description: ebook.SummaryContent,
+			Description: *ebook.SummaryContent,
 			URL:         ebook.URL,
-			AudioURL:    ebook.SummaryAudioURL,
-			Duration:    strconv.Itoa(ebook.SummaryDuration),
+			AudioURL:    *ebook.SummaryAudioURL,
+			Duration:    strconv.Itoa(*ebook.SummaryDuration),
 		},
 		PremiumSummary: nil,
 	}

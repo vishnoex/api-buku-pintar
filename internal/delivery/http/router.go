@@ -16,6 +16,7 @@ type Router struct {
 	paymentHandler  *PaymentHandler
 	oauth2Handler   *OAuth2Handler
 	authMiddleware  *middleware.AuthMiddleware
+	roleMiddleware  *middleware.RoleMiddleware
 }
 
 // NewRouter creates a new router instance
@@ -28,9 +29,10 @@ func NewRouter(
 	paymentHandler *PaymentHandler,
 	oauth2Handler *OAuth2Handler,
 	authMiddleware *middleware.AuthMiddleware,
+	roleMiddleware *middleware.RoleMiddleware,
 ) *Router {
 	return &Router{
-		bannerHandler: bannerHandler,
+		bannerHandler:   bannerHandler,
 		categoryHandler: categoryHandler,
 		ebookHandler:    ebookHandler,
 		summaryHandler:  summaryHandler,
@@ -38,6 +40,7 @@ func NewRouter(
 		paymentHandler:  paymentHandler,
 		oauth2Handler:   oauth2Handler,
 		authMiddleware:  authMiddleware,
+		roleMiddleware:  roleMiddleware,
 	}
 }
 
@@ -50,57 +53,110 @@ func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
 func (r *Router) SetupRoutes() *http.ServeMux {
 	mux := &http.ServeMux{}
 
-	// Category routes
+	// ============================================================================
+	// PUBLIC ROUTES - No authentication required
+	// ============================================================================
+	
+	// Category routes (public read)
 	mux.HandleFunc("/categories", r.categoryHandler.ListCategory)
 	mux.HandleFunc("/categories/all", r.categoryHandler.ListAllCategories)
 	mux.HandleFunc("/categories/view/{id}", r.categoryHandler.GetCategoryByID)
 	mux.HandleFunc("/categories/parent/{parentID}", r.categoryHandler.ListCategoriesByParent)
-	
-	// Protected category routes (admin only)
-	mux.Handle("/categories/create", r.authMiddleware.Authenticate(http.HandlerFunc(r.categoryHandler.CreateCategory)))
-	mux.Handle("/categories/edit/{id}", r.authMiddleware.Authenticate(http.HandlerFunc(r.categoryHandler.UpdateCategory)))
-	mux.Handle("/categories/delete/{id}", r.authMiddleware.Authenticate(http.HandlerFunc(r.categoryHandler.DeleteCategory)))
 
-	// Banner routes
+	// Banner routes (public read)
 	mux.HandleFunc("/banners", r.bannerHandler.ListBanner)
 	mux.HandleFunc("/banners/active", r.bannerHandler.ListActiveBanner)
 	mux.HandleFunc("/banners/view/{id}", r.bannerHandler.GetBannerByID)
-	
-	// Protected banner routes (admin only)
-	mux.Handle("/banners/create", r.authMiddleware.Authenticate(http.HandlerFunc(r.bannerHandler.CreateBanner)))
-	mux.Handle("/banners/edit/{id}", r.authMiddleware.Authenticate(http.HandlerFunc(r.bannerHandler.UpdateBanner)))
-	mux.Handle("/banners/delete/{id}", r.authMiddleware.Authenticate(http.HandlerFunc(r.bannerHandler.DeleteBanner)))
 
-	// Ebook routes
+	// Ebook routes (public read)
 	mux.HandleFunc("/ebooks", r.ebookHandler.ListEbooks)
 	mux.HandleFunc("/ebooks/{id}", r.ebookHandler.GetEbookByID)
 	mux.HandleFunc("/ebooks/slug/{slug}", r.ebookHandler.GetEbookBySlug)
 
-	// Summary routes
+	// Summary routes (public read)
 	mux.HandleFunc("/summaries", r.summaryHandler.ListSummaries)
 	mux.HandleFunc("/summaries/{id}", r.summaryHandler.GetSummaryByID)
 	mux.HandleFunc("/summaries/ebook/{ebookID}", r.summaryHandler.GetSummariesByEbookID)
-	
-	// Protected summary routes (admin only)
-	mux.Handle("/summaries/create", r.authMiddleware.Authenticate(http.HandlerFunc(r.summaryHandler.CreateSummary)))
-	mux.Handle("/summaries/edit/{id}", r.authMiddleware.Authenticate(http.HandlerFunc(r.summaryHandler.UpdateSummary)))
-	mux.Handle("/summaries/delete/{id}", r.authMiddleware.Authenticate(http.HandlerFunc(r.summaryHandler.DeleteSummary)))
 
-	// OAuth2 routes
+	// OAuth2 routes (public)
 	mux.HandleFunc("/oauth2/login", r.oauth2Handler.Login)
 	mux.HandleFunc("/oauth2/callback", r.oauth2Handler.Callback)
 	mux.HandleFunc("/oauth2/providers", r.oauth2Handler.GetProviders)
 	mux.HandleFunc("/oauth2/{provider}/redirect", r.oauth2Handler.HandleOAuth2Redirect)
 
-	// Public routes
+	// User registration (public)
 	mux.HandleFunc("/users/register", r.userHandler.Register)
+
+	// Payment callback (public - webhook)
 	mux.HandleFunc("/payments/callback", r.paymentHandler.HandleXenditCallback)
 
-	// Protected routes
+	// ============================================================================
+	// AUTHENTICATED USER ROUTES - Requires authentication only
+	// ============================================================================
+	
+	// User profile routes (authenticated users can access their own profile)
 	mux.Handle("/users", r.authMiddleware.Authenticate(http.HandlerFunc(r.userHandler.GetUser)))
 	mux.Handle("/users/update", r.authMiddleware.Authenticate(http.HandlerFunc(r.userHandler.UpdateUser)))
 	mux.Handle("/users/delete", r.authMiddleware.Authenticate(http.HandlerFunc(r.userHandler.DeleteUser)))
+
+	// Payment routes (authenticated users)
 	mux.Handle("/payments/initiate", r.authMiddleware.Authenticate(http.HandlerFunc(r.paymentHandler.InitiatePayment)))
+
+	// ============================================================================
+	// ADMIN ONLY ROUTES - Requires admin role
+	// ============================================================================
+	
+	// Category management (admin only)
+	mux.Handle("/categories/create", 
+		r.authMiddleware.Authenticate(
+			r.roleMiddleware.RequireRole("admin")(
+				http.HandlerFunc(r.categoryHandler.CreateCategory))))
+	
+	mux.Handle("/categories/edit/{id}", 
+		r.authMiddleware.Authenticate(
+			r.roleMiddleware.RequireRole("admin")(
+				http.HandlerFunc(r.categoryHandler.UpdateCategory))))
+	
+	mux.Handle("/categories/delete/{id}", 
+		r.authMiddleware.Authenticate(
+			r.roleMiddleware.RequireRole("admin")(
+				http.HandlerFunc(r.categoryHandler.DeleteCategory))))
+
+	// Banner management (admin only)
+	mux.Handle("/banners/create", 
+		r.authMiddleware.Authenticate(
+			r.roleMiddleware.RequireRole("admin")(
+				http.HandlerFunc(r.bannerHandler.CreateBanner))))
+	
+	mux.Handle("/banners/edit/{id}", 
+		r.authMiddleware.Authenticate(
+			r.roleMiddleware.RequireRole("admin")(
+				http.HandlerFunc(r.bannerHandler.UpdateBanner))))
+	
+	mux.Handle("/banners/delete/{id}", 
+		r.authMiddleware.Authenticate(
+			r.roleMiddleware.RequireRole("admin")(
+				http.HandlerFunc(r.bannerHandler.DeleteBanner))))
+
+	// ============================================================================
+	// EDITOR+ ROUTES - Requires editor or admin role
+	// ============================================================================
+	
+	// Summary management (editor and admin)
+	mux.Handle("/summaries/create", 
+		r.authMiddleware.Authenticate(
+			r.roleMiddleware.RequireAnyRole("admin", "editor")(
+				http.HandlerFunc(r.summaryHandler.CreateSummary))))
+	
+	mux.Handle("/summaries/edit/{id}", 
+		r.authMiddleware.Authenticate(
+			r.roleMiddleware.RequireAnyRole("admin", "editor")(
+				http.HandlerFunc(r.summaryHandler.UpdateSummary))))
+	
+	mux.Handle("/summaries/delete/{id}", 
+		r.authMiddleware.Authenticate(
+			r.roleMiddleware.RequireRole("admin")(
+				http.HandlerFunc(r.summaryHandler.DeleteSummary))))
 
 	// Catch-all handler for unmatched routes (404)
 	mux.HandleFunc("/", NotFoundHandler)

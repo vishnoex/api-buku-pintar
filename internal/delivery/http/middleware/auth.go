@@ -7,16 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-
-	"firebase.google.com/go/v4/auth"
-)
-
-// ClaimKey represents a type for Firebase token claim keys
-type ClaimKey string
-
-const (
-	EmailClaim ClaimKey = "email"
-	NameClaim  ClaimKey = "name"
 )
 
 // ContextKey represents a type for context keys
@@ -27,13 +17,11 @@ const (
 )
 
 type AuthMiddleware struct {
-	firebaseAuth *auth.Client
 	oauth2Service *oauth2.OAuth2Service
 }
 
-func NewAuthMiddleware(firebaseAuth *auth.Client, oauth2Service *oauth2.OAuth2Service) *AuthMiddleware {
+func NewAuthMiddleware(oauth2Service *oauth2.OAuth2Service) *AuthMiddleware {
 	return &AuthMiddleware{
-		firebaseAuth: firebaseAuth,
 		oauth2Service: oauth2Service,
 	}
 }
@@ -54,17 +42,8 @@ func (m *AuthMiddleware) Authenticate(next http.Handler) http.Handler {
 			return
 		}
 
-		// Try Firebase authentication first
-		user, err := m.authenticateWithFirebase(r.Context(), token)
-		if err == nil && user != nil {
-			// Firebase authentication successful
-			ctx := context.WithValue(r.Context(), UserContextKey, user)
-			next.ServeHTTP(w, r.WithContext(ctx))
-			return
-		}
-
 		// Try OAuth2 token validation
-		user, err = m.authenticateWithOAuth2(r.Context(), token)
+		user, err := m.authenticateWithOAuth2(r.Context(), token)
 		if err == nil && user != nil {
 			// OAuth2 authentication successful
 			ctx := context.WithValue(r.Context(), UserContextKey, user)
@@ -72,29 +51,9 @@ func (m *AuthMiddleware) Authenticate(next http.Handler) http.Handler {
 			return
 		}
 
-		// Both authentication methods failed
+		// Authentication failed
 		http.Error(w, "Invalid authentication token", http.StatusUnauthorized)
 	})
-}
-
-// authenticateWithFirebase attempts to authenticate using Firebase
-func (m *AuthMiddleware) authenticateWithFirebase(ctx context.Context, idToken string) (*entity.User, error) {
-	// Verify the ID token
-	token, err := m.firebaseAuth.VerifyIDToken(ctx, idToken)
-	if err != nil {
-		return nil, err
-	}
-
-	// Create user context
-	user := &entity.User{
-		ID:     token.UID, // Use Firebase UID as the user ID
-		Email:  token.Claims[string(EmailClaim)].(string),
-		Name:   token.Claims[string(NameClaim)].(string),
-		Role:   entity.RoleReader, // Default role
-		Status: entity.StatusActive, // Default status
-	}
-
-	return user, nil
 }
 
 // authenticateWithOAuth2 attempts to authenticate using OAuth2 token

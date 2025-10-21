@@ -5,7 +5,6 @@ import (
 	"buku-pintar/internal/domain/entity"
 	"buku-pintar/internal/usecase"
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
@@ -30,34 +29,8 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req RegisterRequest
-	fmt.Println("=== Validatin Request Body ===")
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// If ID token is provided, use Firebase registration
-	if req.IDToken != "" {
-		fmt.Println("=== Register with firebase ===")
-		if err := h.userUsecase.RegisterWithFirebase(r.Context(), &req.User, req.IDToken); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	} else {
-		// Otherwise use regular registration
-		fmt.Println("=== Register with regular method ===")
-		if err := h.userUsecase.Register(r.Context(), &req.User); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(req.User); err != nil {
-		http.Error(w, constant.ERR_ENCODING_RESP, http.StatusInternalServerError)
-		return
-	}
+	// Only OAuth2 registration is supported
+	http.Error(w, "Direct registration not supported. Please use OAuth2 authentication.", http.StatusBadRequest)
 }
 
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
