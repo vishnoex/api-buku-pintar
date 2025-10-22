@@ -15,6 +15,7 @@ type Router struct {
 	userHandler     *UserHandler
 	paymentHandler  *PaymentHandler
 	oauth2Handler   *OAuth2Handler
+	tokenHandler    *TokenHandler
 	authMiddleware  *middleware.AuthMiddleware
 	roleMiddleware  *middleware.RoleMiddleware
 }
@@ -28,6 +29,7 @@ func NewRouter(
 	userHandler *UserHandler,
 	paymentHandler *PaymentHandler,
 	oauth2Handler *OAuth2Handler,
+	tokenHandler *TokenHandler,
 	authMiddleware *middleware.AuthMiddleware,
 	roleMiddleware *middleware.RoleMiddleware,
 ) *Router {
@@ -39,6 +41,7 @@ func NewRouter(
 		userHandler:     userHandler,
 		paymentHandler:  paymentHandler,
 		oauth2Handler:   oauth2Handler,
+		tokenHandler:    tokenHandler,
 		authMiddleware:  authMiddleware,
 		roleMiddleware:  roleMiddleware,
 	}
@@ -101,6 +104,9 @@ func (r *Router) SetupRoutes() *http.ServeMux {
 
 	// Payment routes (authenticated users)
 	mux.Handle("/payments/initiate", r.authMiddleware.Authenticate(http.HandlerFunc(r.paymentHandler.InitiatePayment)))
+
+	// Token routes (authenticated users can refresh their own tokens)
+	mux.Handle("/tokens/refresh", r.authMiddleware.Authenticate(http.HandlerFunc(r.tokenHandler.RefreshToken)))
 
 	// ============================================================================
 	// ADMIN ONLY ROUTES - Requires admin role

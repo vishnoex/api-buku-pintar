@@ -42,6 +42,12 @@ type XenditConfig struct {
 	Key string `json:"key"`
 }
 
+// SecurityConfig represents security-related configuration
+type SecurityConfig struct {
+	TokenEncryptionKey string `json:"token_encryption_key"` // Key for encrypting OAuth tokens
+	JWTSecret          string `json:"jwt_secret"`           // Secret for signing JWT tokens
+}
+
 // OAuth2Config represents OAuth2 provider configuration
 type OAuth2Config struct {
 	Google   GoogleOAuth2Config   `json:"google"`
@@ -76,6 +82,7 @@ type Config struct {
 	Payment       PaymentConfig  `json:"payment"`
 	OAuth2        OAuth2Config   `json:"oauth2"`
 	Redis         RedisConfig    `json:"redis"`
+	Security      SecurityConfig `json:"security"`
 }
 
 // Load loads the configuration from a JSON file

@@ -3,17 +3,21 @@ package main
 import (
 	"buku-pintar/internal/delivery/http"
 	"buku-pintar/internal/delivery/http/middleware"
+	"buku-pintar/internal/domain/entity"
 	"buku-pintar/internal/repository/mysql"
 	"buku-pintar/internal/repository/redis"
 	"buku-pintar/internal/service"
 	"buku-pintar/internal/usecase"
 	"buku-pintar/pkg/config"
+	"buku-pintar/pkg/crypto"
 	"buku-pintar/pkg/oauth2"
 	"database/sql"
 	"fmt"
 	"log"
 	client "net/http"
 	"os"
+
+	oauth2lib "golang.org/x/oauth2"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -111,8 +115,48 @@ func main() {
 	userUsecase := usecase.NewUserUsecase(userRepo, userService)
 	userHandler := http.NewUserHandler(userUsecase)
 
+	// Initialize token encryption
+	tokenEncryptor, err := crypto.NewTokenEncryptorFromString(cfg.Security.TokenEncryptionKey)
+	if err != nil {
+		log.Printf("Warning: Failed to initialize token encryptor: %v", err)
+		// Use a default key for development (NOT for production!)
+		tokenEncryptor, _ = crypto.NewTokenEncryptorFromString("default-encryption-key-change-me-in-production")
+	}
+
+	// Initialize OAuth token repositories
+	oauthTokenRepo := mysql.NewOAuthTokenRepository(db)
+	oauthTokenRedisRepo := redis.NewOAuthTokenRedisRepository(cRedis)
+	
+	// Initialize token blacklist repositories (nil until implemented)
+	// TODO: Implement TokenBlacklistRepository and TokenBlacklistRedisRepository
+	
+	// Create OAuth2 configs map for token refresh
+	oauth2Configs := make(map[entity.OAuthProvider]*oauth2lib.Config)
+	if googleConfig, exists := oauth2Service.GetProvider(oauth2.ProviderGoogle); exists {
+		oauth2Configs[entity.ProviderGoogle] = googleConfig
+	}
+	if githubConfig, exists := oauth2Service.GetProvider(oauth2.ProviderGitHub); exists {
+		oauth2Configs[entity.ProviderGithub] = githubConfig
+	}
+	if facebookConfig, exists := oauth2Service.GetProvider(oauth2.ProviderFacebook); exists {
+		oauth2Configs[entity.ProviderFacebook] = facebookConfig
+	}
+	
+	// Initialize token service
+	tokenService := service.NewTokenService(
+		oauthTokenRepo,
+		oauthTokenRedisRepo,
+		nil, // tokenBlacklistRepo - to be implemented
+		nil, // tokenBlacklistRedisRepo - to be implemented
+		tokenEncryptor,
+		oauth2Configs,
+	)
+
 	// Initialize OAuth2 dependencies
-	oauth2Handler := http.NewOAuth2Handler(oauth2Service, userUsecase)
+	oauth2Handler := http.NewOAuth2Handler(oauth2Service, userUsecase, tokenService)
+
+	// Initialize token handler
+	tokenHandler := http.NewTokenHandler(tokenService)
 
 	// Initialize payment dependencies
 	paymentRepo := mysql.NewPaymentRepository(db)
@@ -154,7 +198,7 @@ func main() {
 	summaryService := service.NewSummaryServiceImpl(summaryRepo, summaryRedisRepo)
 	summaryHandler := http.NewSummaryHandler(summaryService)
 	// Initialize router
-	router := http.NewRouter(bannerHandler, categoryHandler, ebookHandler, summaryHandler, userHandler, paymentHandler, oauth2Handler, authMiddleware, roleMiddleware)
+	router := http.NewRouter(bannerHandler, categoryHandler, ebookHandler, summaryHandler, userHandler, paymentHandler, oauth2Handler, tokenHandler, authMiddleware, roleMiddleware)
 
 	// Initialize router
 	// router := http.NewRouter(bannerHandler, categoryHandler, ebookHandler, summaryHandler, userHandler, paymentHandler, oauth2Handler, authMiddleware)

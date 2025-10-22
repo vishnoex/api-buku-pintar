@@ -43,5 +43,9 @@
             "client_secret": "your_facebook_client_secret",
             "redirect_url": "http://localhost:8080/oauth2/facebook/redirect"
         }
+    },
+    "security": {
+        "token_encryption_key": "your-32-byte-encryption-key-here-change-this",
+        "jwt_secret": "your-jwt-secret-key-here-change-this"
     }
 } 

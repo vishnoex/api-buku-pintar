@@ -3,12 +3,14 @@ package http
 import (
 	"buku-pintar/internal/constant"
 	"buku-pintar/internal/domain/entity"
+	"buku-pintar/internal/domain/service"
 	"buku-pintar/internal/usecase"
 	"buku-pintar/pkg/oauth2"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -17,12 +19,32 @@ import (
 type OAuth2Handler struct {
 	oauth2Service *oauth2.OAuth2Service
 	userUsecase   usecase.UserUsecase
+	tokenService  service.TokenService
 }
 
-func NewOAuth2Handler(oauth2Service *oauth2.OAuth2Service, userUsecase usecase.UserUsecase) *OAuth2Handler {
+func NewOAuth2Handler(
+	oauth2Service *oauth2.OAuth2Service,
+	userUsecase usecase.UserUsecase,
+	tokenService service.TokenService,
+) *OAuth2Handler {
 	return &OAuth2Handler{
 		oauth2Service: oauth2Service,
 		userUsecase:   userUsecase,
+		tokenService:  tokenService,
+	}
+}
+
+// convertProviderToEntity converts oauth2.Provider to entity.OAuthProvider
+func convertProviderToEntity(provider oauth2.Provider) entity.OAuthProvider {
+	switch provider {
+	case oauth2.ProviderGoogle:
+		return entity.ProviderGoogle
+	case oauth2.ProviderGitHub:
+		return entity.ProviderGithub // Note: entity uses "Github" not "GitHub"
+	case oauth2.ProviderFacebook:
+		return entity.ProviderFacebook
+	default:
+		return entity.ProviderGoogle // Default fallback
 	}
 }
 
@@ -196,8 +218,19 @@ func (h *OAuth2Handler) Callback(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Store OAuth2 token in database (encrypted)
+	entityProvider := convertProviderToEntity(provider)
+	if err := h.tokenService.StoreOAuthToken(r.Context(), user.ID, entityProvider, token); err != nil {
+		// Log error but don't fail the request
+		// Token storage is important but shouldn't break authentication flow
+		log.Printf("Warning: failed to store OAuth2 token for user %s: %v", user.ID, err)
+	} else {
+		log.Printf("Successfully stored OAuth2 token for user %s with provider %s", user.ID, entityProvider)
+	}
+
 	// Generate JWT token or session for the user
 	// For now, we'll return the user info with the OAuth2 access token
+	// TODO: Replace with JWT token generation for better security
 	response := OAuth2TokenResponse{
 		AccessToken: token.AccessToken,
 		TokenType:   token.TokenType,
@@ -319,6 +352,15 @@ func (h *OAuth2Handler) HandleOAuth2Redirect(w http.ResponseWriter, r *http.Requ
 				return
 			}
 		}
+	}
+
+	// Store OAuth2 token in database (encrypted)
+	entityProvider := convertProviderToEntity(provider)
+	if err := h.tokenService.StoreOAuthToken(r.Context(), user.ID, entityProvider, token); err != nil {
+		// Log error but don't fail the redirect
+		log.Printf("Warning: failed to store OAuth2 token for user %s: %v", user.ID, err)
+	} else {
+		log.Printf("Successfully stored OAuth2 token for user %s with provider %s", user.ID, entityProvider)
 	}
 
 	// Redirect to frontend with user info and token
