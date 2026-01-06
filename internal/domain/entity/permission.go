@@ -28,6 +28,8 @@ const (
 	ResourceInspiration ResourceType = "inspiration"
 	ResourceAuthor      ResourceType = "author"
 	ResourcePayment     ResourceType = "payment"
+	ResourceComment     ResourceType = "comment"
+	ResourceSEO         ResourceType = "seo"
 )
 
 // ActionType represents the type of action that can be performed on a resource
@@ -123,4 +125,28 @@ const (
 	PermissionPaymentDelete = "payment:delete"
 	PermissionPaymentList   = "payment:list"
 	PermissionPaymentManage = "payment:manage"
+
+	// Permission permissions (meta-permissions for managing permissions)
+	PermissionPermissionCreate = "permission:create"
+	PermissionPermissionRead   = "permission:read"
+	PermissionPermissionUpdate = "permission:update"
+	PermissionPermissionDelete = "permission:delete"
+	PermissionPermissionList   = "permission:list"
+	PermissionPermissionManage = "permission:manage"
+
+	// Comment permissions
+	PermissionCommentCreate = "comment:create"
+	PermissionCommentRead   = "comment:read"
+	PermissionCommentUpdate = "comment:update"
+	PermissionCommentDelete = "comment:delete"
+	PermissionCommentList   = "comment:list"
+	PermissionCommentManage = "comment:manage"
+
+	// SEO permissions
+	PermissionSEOCreate = "seo:create"
+	PermissionSEORead   = "seo:read"
+	PermissionSEOUpdate = "seo:update"
+	PermissionSEODelete = "seo:delete"
+	PermissionSEOList   = "seo:list"
+	PermissionSEOManage = "seo:manage"
 )

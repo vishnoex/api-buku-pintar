@@ -3,21 +3,23 @@ package http
 import (
 	"buku-pintar/internal/delivery/http/middleware"
 	"buku-pintar/internal/delivery/http/response"
+	"buku-pintar/internal/domain/entity"
 	"net/http"
 )
 
 // Router handles all route definitions
 type Router struct {
-	bannerHandler   *BannerHandler
-	categoryHandler *CategoryHandler
-	ebookHandler    *EbookHandler
-	summaryHandler  *SummaryHandler
-	userHandler     *UserHandler
-	paymentHandler  *PaymentHandler
-	oauth2Handler   *OAuth2Handler
-	tokenHandler    *TokenHandler
-	authMiddleware  *middleware.AuthMiddleware
-	roleMiddleware  *middleware.RoleMiddleware
+	bannerHandler        *BannerHandler
+	categoryHandler      *CategoryHandler
+	ebookHandler         *EbookHandler
+	summaryHandler       *SummaryHandler
+	userHandler          *UserHandler
+	paymentHandler       *PaymentHandler
+	oauth2Handler        *OAuth2Handler
+	tokenHandler         *TokenHandler
+	authMiddleware       *middleware.AuthMiddleware
+	roleMiddleware       *middleware.RoleMiddleware
+	permissionMiddleware *middleware.PermissionMiddleware
 }
 
 // NewRouter creates a new router instance
@@ -32,18 +34,20 @@ func NewRouter(
 	tokenHandler *TokenHandler,
 	authMiddleware *middleware.AuthMiddleware,
 	roleMiddleware *middleware.RoleMiddleware,
+	permissionMiddleware *middleware.PermissionMiddleware,
 ) *Router {
 	return &Router{
-		bannerHandler:   bannerHandler,
-		categoryHandler: categoryHandler,
-		ebookHandler:    ebookHandler,
-		summaryHandler:  summaryHandler,
-		userHandler:     userHandler,
-		paymentHandler:  paymentHandler,
-		oauth2Handler:   oauth2Handler,
-		tokenHandler:    tokenHandler,
-		authMiddleware:  authMiddleware,
-		roleMiddleware:  roleMiddleware,
+		bannerHandler:        bannerHandler,
+		categoryHandler:      categoryHandler,
+		ebookHandler:         ebookHandler,
+		summaryHandler:       summaryHandler,
+		userHandler:          userHandler,
+		paymentHandler:       paymentHandler,
+		oauth2Handler:        oauth2Handler,
+		tokenHandler:         tokenHandler,
+		authMiddleware:       authMiddleware,
+		roleMiddleware:       roleMiddleware,
+		permissionMiddleware: permissionMiddleware,
 	}
 }
 
@@ -105,63 +109,63 @@ func (r *Router) SetupRoutes() *http.ServeMux {
 	// Payment routes (authenticated users)
 	mux.Handle("/payments/initiate", r.authMiddleware.Authenticate(http.HandlerFunc(r.paymentHandler.InitiatePayment)))
 
-	// Token routes (authenticated users can refresh their own tokens)
+	// Token routes (authenticated users can refresh and validate their own tokens)
 	mux.Handle("/tokens/refresh", r.authMiddleware.Authenticate(http.HandlerFunc(r.tokenHandler.RefreshToken)))
+	mux.Handle("/tokens/validate", r.authMiddleware.Authenticate(http.HandlerFunc(r.tokenHandler.ValidateToken)))
+	mux.Handle("/tokens/logout", r.authMiddleware.Authenticate(http.HandlerFunc(r.tokenHandler.Logout)))
 
 	// ============================================================================
 	// ADMIN ONLY ROUTES - Requires admin role
 	// ============================================================================
 	
-	// Category management (admin only)
+	// Category management (requires category:create permission)
 	mux.Handle("/categories/create", 
 		r.authMiddleware.Authenticate(
-			r.roleMiddleware.RequireRole("admin")(
+			r.permissionMiddleware.CheckPermission(entity.PermissionCategoryCreate)(
 				http.HandlerFunc(r.categoryHandler.CreateCategory))))
 	
 	mux.Handle("/categories/edit/{id}", 
 		r.authMiddleware.Authenticate(
-			r.roleMiddleware.RequireRole("admin")(
+			r.permissionMiddleware.CheckPermission(entity.PermissionCategoryUpdate)(
 				http.HandlerFunc(r.categoryHandler.UpdateCategory))))
 	
 	mux.Handle("/categories/delete/{id}", 
 		r.authMiddleware.Authenticate(
-			r.roleMiddleware.RequireRole("admin")(
+			r.permissionMiddleware.CheckPermission(entity.PermissionCategoryDelete)(
 				http.HandlerFunc(r.categoryHandler.DeleteCategory))))
 
-	// Banner management (admin only)
+	// Banner management (requires banner permissions)
 	mux.Handle("/banners/create", 
 		r.authMiddleware.Authenticate(
-			r.roleMiddleware.RequireRole("admin")(
-				http.HandlerFunc(r.bannerHandler.CreateBanner))))
+		r.permissionMiddleware.CheckPermission(entity.PermissionBannerCreate)(
+			http.HandlerFunc(r.bannerHandler.CreateBanner))))
 	
 	mux.Handle("/banners/edit/{id}", 
 		r.authMiddleware.Authenticate(
-			r.roleMiddleware.RequireRole("admin")(
+			r.permissionMiddleware.CheckPermission(entity.PermissionBannerUpdate)(
 				http.HandlerFunc(r.bannerHandler.UpdateBanner))))
 	
 	mux.Handle("/banners/delete/{id}", 
 		r.authMiddleware.Authenticate(
-			r.roleMiddleware.RequireRole("admin")(
-				http.HandlerFunc(r.bannerHandler.DeleteBanner))))
-
-	// ============================================================================
-	// EDITOR+ ROUTES - Requires editor or admin role
+			r.permissionMiddleware.CheckPermission(entity.PermissionBannerDelete)(
+				http.HandlerFunc(r.bannerHandler.DeleteBanner))))	// ============================================================================
+	// EDITOR+ ROUTES - Requires content management permissions
 	// ============================================================================
 	
-	// Summary management (editor and admin)
+	// Summary management (requires summary permissions)
 	mux.Handle("/summaries/create", 
 		r.authMiddleware.Authenticate(
-			r.roleMiddleware.RequireAnyRole("admin", "editor")(
+			r.permissionMiddleware.CheckPermission(entity.PermissionSummaryCreate)(
 				http.HandlerFunc(r.summaryHandler.CreateSummary))))
 	
 	mux.Handle("/summaries/edit/{id}", 
 		r.authMiddleware.Authenticate(
-			r.roleMiddleware.RequireAnyRole("admin", "editor")(
+			r.permissionMiddleware.CheckPermission(entity.PermissionSummaryUpdate)(
 				http.HandlerFunc(r.summaryHandler.UpdateSummary))))
 	
 	mux.Handle("/summaries/delete/{id}", 
 		r.authMiddleware.Authenticate(
-			r.roleMiddleware.RequireRole("admin")(
+			r.permissionMiddleware.CheckPermission(entity.PermissionSummaryDelete)(
 				http.HandlerFunc(r.summaryHandler.DeleteSummary))))
 
 	// Catch-all handler for unmatched routes (404)

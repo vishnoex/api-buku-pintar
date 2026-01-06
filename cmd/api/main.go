@@ -180,6 +180,17 @@ func main() {
 	// Initialize role middleware
 	roleMiddleware := middleware.NewRoleMiddleware(roleService, permissionService)
 
+	// Initialize permission middleware
+	permissionMiddlewareConfig := &middleware.PermissionMiddlewareConfig{
+		EnableAuditLog: true,
+		EnableDebug:    false,
+	}
+	permissionMiddleware := middleware.NewPermissionMiddleware(
+		permissionService,
+		roleService,
+		permissionMiddlewareConfig,
+	)
+
 	// Initialize ebook discount dependencies
 	ebookDiscountRepo := mysql.NewEbookDiscountRepository(db)
 	ebookDiscountRedisRepo := redis.NewEbookDiscountRedisRepository(cRedis)
@@ -198,7 +209,7 @@ func main() {
 	summaryService := service.NewSummaryServiceImpl(summaryRepo, summaryRedisRepo)
 	summaryHandler := http.NewSummaryHandler(summaryService)
 	// Initialize router
-	router := http.NewRouter(bannerHandler, categoryHandler, ebookHandler, summaryHandler, userHandler, paymentHandler, oauth2Handler, tokenHandler, authMiddleware, roleMiddleware)
+	router := http.NewRouter(bannerHandler, categoryHandler, ebookHandler, summaryHandler, userHandler, paymentHandler, oauth2Handler, tokenHandler, authMiddleware, roleMiddleware, permissionMiddleware)
 
 	// Initialize router
 	// router := http.NewRouter(bannerHandler, categoryHandler, ebookHandler, summaryHandler, userHandler, paymentHandler, oauth2Handler, authMiddleware)

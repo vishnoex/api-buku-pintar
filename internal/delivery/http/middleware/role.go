@@ -377,8 +377,8 @@ func (m *RoleMiddleware) InjectPermissionsIntoContext(next http.Handler) http.Ha
 	})
 }
 
-// Context keys for storing role and permissions
+// Context keys for storing role
 const (
-	RoleContextKey        ContextKey = "role"
-	PermissionsContextKey ContextKey = "permissions"
+	RoleContextKey ContextKey = "role"
 )
+
