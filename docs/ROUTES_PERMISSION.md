@@ -45,15 +45,8 @@ Routes are organized into three security levels:
 ### Authentication
 | Method | Endpoint | Description | Access |
 |--------|----------|-------------|--------|
-| GET | `/oauth2/login` | Initiate OAuth2 login | Public |
-| GET | `/oauth2/callback` | OAuth2 callback handler | Public |
-| GET | `/oauth2/providers` | List available OAuth2 providers | Public |
-| GET | `/oauth2/{provider}/redirect` | OAuth2 provider redirect | Public |
-
-### Users
-| Method | Endpoint | Description | Access |
-|--------|----------|-------------|--------|
-| POST | `/users/register` | Register new user | Public |
+| POST | `/api/v1/auth/register` | Register Supabase Auth user and requested role | Public |
+| POST | `/api/v1/auth/verify-email` | Complete email verification and provision local RBAC user | Public |
 
 ### Payments
 | Method | Endpoint | Description | Access |
@@ -64,7 +57,7 @@ Routes are organized into three security levels:
 
 ## 🔒 Authenticated Routes (Requires Login)
 
-These routes require a valid authentication token but no specific role.
+These routes require a valid Supabase access token and a verified local user row.
 
 ### User Profile
 | Method | Endpoint | Description | Required Permission |
@@ -82,36 +75,36 @@ These routes require a valid authentication token but no specific role.
 
 ## 👑 Admin Only Routes
 
-These routes require authentication + **Admin** role.
+These routes require authentication + the listed permission.
 
 ### Category Management
 | Method | Endpoint | Description | Required Role | Permission |
 |--------|----------|-------------|---------------|------------|
-| POST | `/categories/create` | Create new category | Admin | `category:create` |
-| PUT | `/categories/edit/{id}` | Update existing category | Admin | `category:update` |
-| DELETE | `/categories/delete/{id}` | Delete category | Admin | `category:delete` |
+| POST | `/categories/create` | Create new category | Permission-based | `category:create` |
+| PUT | `/categories/edit/{id}` | Update existing category | Permission-based | `category:update` |
+| DELETE | `/categories/delete/{id}` | Delete category | Permission-based | `category:delete` |
 
 ### Banner Management
 | Method | Endpoint | Description | Required Role | Permission |
 |--------|----------|-------------|---------------|------------|
-| POST | `/banners/create` | Create new banner | Admin | `banner:create` |
-| PUT | `/banners/edit/{id}` | Update existing banner | Admin | `banner:update` |
-| DELETE | `/banners/delete/{id}` | Delete banner | Admin | `banner:delete` |
+| POST | `/banners/create` | Create new banner | Permission-based | `banner:create` |
+| PUT | `/banners/edit/{id}` | Update existing banner | Permission-based | `banner:update` |
+| DELETE | `/banners/delete/{id}` | Delete banner | Permission-based | `banner:delete` |
 
 ---
 
 ## ✏️ Editor+ Routes
 
-These routes require authentication + **Editor** OR **Admin** role.
+These routes require authentication + the listed permission.
 
 ### Summary Management
 | Method | Endpoint | Description | Required Roles | Permission |
 |--------|----------|-------------|----------------|------------|
-| POST | `/summaries/create` | Create new summary | Editor, Admin | `summary:create` |
-| PUT | `/summaries/edit/{id}` | Update existing summary | Editor, Admin | `summary:update` |
-| DELETE | `/summaries/delete/{id}` | Delete summary | Admin only | `summary:delete` |
+| POST | `/summaries/create` | Create new summary | Permission-based | `summary:create` |
+| PUT | `/summaries/edit/{id}` | Update existing summary | Permission-based | `summary:update` |
+| DELETE | `/summaries/delete/{id}` | Delete summary | Permission-based | `summary:delete` |
 
-> **Note:** Delete operations require Admin role even for editors.
+> **Note:** Actual access is determined by permissions assigned to each role in `role_permissions`.
 
 ---
 

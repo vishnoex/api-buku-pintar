@@ -9,7 +9,7 @@ import (
 )
 
 type AppConfig struct {
-	Port string `json:"port"`
+	Port        string `json:"port"`
 	Environment string `json:"environment"`
 }
 
@@ -30,8 +30,15 @@ type RedisConfig struct {
 	DB       int    `json:"db"`
 }
 
-type FirebaseConfig struct {
-	CredentialsFile string `json:"credentials_file"`
+// SupabaseConfig represents Supabase authentication configuration.
+type SupabaseConfig struct {
+	ProjectURL      string `json:"project_url"`
+	AnonKey         string `json:"anon_key"`
+	JWTSecret       string `json:"jwt_secret"`
+	JWKSURL         string `json:"jwks_url"`
+	Issuer          string `json:"issuer"`
+	Audience        string `json:"audience"`
+	EmailRedirectTo string `json:"email_redirect_to"`
 }
 
 type PaymentConfig struct {
@@ -42,47 +49,14 @@ type XenditConfig struct {
 	Key string `json:"key"`
 }
 
-// SecurityConfig represents security-related configuration
-type SecurityConfig struct {
-	TokenEncryptionKey string `json:"token_encryption_key"` // Key for encrypting OAuth tokens
-	JWTSecret          string `json:"jwt_secret"`           // Secret for signing JWT tokens
-}
-
-// OAuth2Config represents OAuth2 provider configuration
-type OAuth2Config struct {
-	Google   GoogleOAuth2Config   `json:"google"`
-	GitHub   GitHubOAuth2Config   `json:"github"`
-	Facebook FacebookOAuth2Config `json:"facebook"`
-}
-
-type GoogleOAuth2Config struct {
-	ClientID     string `json:"client_id"`
-	ClientSecret string `json:"client_secret"`
-	RedirectURL  string `json:"redirect_url"`
-}
-
-type GitHubOAuth2Config struct {
-	ClientID     string `json:"client_id"`
-	ClientSecret string `json:"client_secret"`
-	RedirectURL  string `json:"redirect_url"`
-}
-
-type FacebookOAuth2Config struct {
-	ClientID     string `json:"client_id"`
-	ClientSecret string `json:"client_secret"`
-	RedirectURL  string `json:"redirect_url"`
-}
-
 // Config represents the application configuration
 type Config struct {
-	Firebase      FirebaseConfig `json:"firebase"`
+	Supabase      SupabaseConfig `json:"supabase"`
 	Database      DatabaseConfig `json:"database"`
 	DatabaseLocal DatabaseConfig `json:"database_local"`
 	App           AppConfig      `json:"app"`
 	Payment       PaymentConfig  `json:"payment"`
-	OAuth2        OAuth2Config   `json:"oauth2"`
 	Redis         RedisConfig    `json:"redis"`
-	Security      SecurityConfig `json:"security"`
 }
 
 // Load loads the configuration from a JSON file
@@ -115,15 +89,14 @@ func (c *Config) GetDatabaseConfig() DatabaseConfig {
 	return c.Database
 }
 
+func (c *Config) LoadRedis() (*redis.Client, error) {
+	redisConfig := c.Redis
 
-func (c *Config) LoadRedis () (*redis.Client, error) {
-    redisConfig := c.Redis
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     fmt.Sprintf("%s:%s", redisConfig.Host, redisConfig.Port),
+		Password: redisConfig.Password,
+		DB:       redisConfig.DB,
+	})
 
-    redisClient := redis.NewClient(&redis.Options{
-        Addr:     fmt.Sprintf("%s:%s", redisConfig.Host, redisConfig.Port),
-        Password: redisConfig.Password,
-        DB:       redisConfig.DB,
-    })
-
-    return redisClient, nil
+	return redisClient, nil
 }

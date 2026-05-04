@@ -74,17 +74,17 @@ The application uses a JSON configuration file (`config.json`) for all settings:
         "google": {
             "client_id": "your_google_client_id",
             "client_secret": "your_google_client_secret",
-            "redirect_url": "http://localhost:8080/oauth2/google/redirect"
+            "redirect_url": "http://localhost:8080/api/v1/oauth2/google/redirect"
         },
         "github": {
             "client_id": "your_github_client_id",
             "client_secret": "your_github_client_secret",
-            "redirect_url": "http://localhost:8080/oauth2/github/redirect"
+            "redirect_url": "http://localhost:8080/api/v1/oauth2/github/redirect"
         },
         "facebook": {
             "client_id": "your_facebook_client_id",
             "client_secret": "your_facebook_client_secret",
-            "redirect_url": "http://localhost:8080/oauth2/facebook/redirect"
+            "redirect_url": "http://localhost:8080/api/v1/oauth2/facebook/redirect"
         }
     }
 }
@@ -108,7 +108,7 @@ The application uses a JSON configuration file (`config.json`) for all settings:
 4. Go to Credentials > Create Credentials > OAuth 2.0 Client IDs
 5. Configure the OAuth consent screen
 6. Set application type to "Web application"
-7. Add authorized redirect URIs (e.g., `http://localhost:8080/oauth2/google/redirect`)
+7. Add authorized redirect URIs (e.g., `http://localhost:8080/api/v1/oauth2/google/redirect`)
 8. Copy the Client ID and Client Secret to your `config.json`
 
 ### GitHub OAuth2 Setup
@@ -118,7 +118,7 @@ The application uses a JSON configuration file (`config.json`) for all settings:
 3. Fill in the application details:
    - Application name: Your app name
    - Homepage URL: Your app homepage
-   - Authorization callback URL: `http://localhost:8080/oauth2/github/redirect`
+   - Authorization callback URL: `http://localhost:8080/api/v1/oauth2/github/redirect`
 4. Click "Register application"
 5. Copy the Client ID and Client Secret to your `config.json`
 
@@ -127,7 +127,7 @@ The application uses a JSON configuration file (`config.json`) for all settings:
 1. Go to [Facebook Developers](https://developers.facebook.com/)
 2. Create a new app or select an existing one
 3. Go to Facebook Login > Settings
-4. Add your OAuth redirect URI: `http://localhost:8080/oauth2/facebook/redirect`
+4. Add your OAuth redirect URI: `http://localhost:8080/api/v1/oauth2/facebook/redirect`
 5. Copy the App ID and App Secret to your `config.json`
 
 ## Xendit Setup
@@ -170,58 +170,57 @@ go run cmd/api/main.go
 
 ### Public Endpoints
 
-- `POST /users/register` - Register a new user
-- `POST /payments/callback` - Xendit payment status callback
+- `POST /api/v1/auth/register` - Register a new Supabase Auth user and request role assignment
+- `POST /api/v1/auth/verify-email` - Complete email verification and create/update the local RBAC user
+- `POST /api/v1/payments/callback` - Xendit payment status callback
 
 ### Banner Endpoints
 
-- `GET /banners` - List active banners (paginated)
-- `GET /banners/active` - List active banners (paginated)
-- `GET /banners/view/{id}` - Get banner by ID
-- `POST /banners/create` - Create new banner (protected)
-- `PUT /banners/edit/{id}` - Update banner (protected)
-- `DELETE /banners/delete/{id}` - Delete banner (protected)
+- `GET /api/v1/banners` - List active banners (paginated)
+- `GET /api/v1/banners/active` - List active banners (paginated)
+- `GET /api/v1/banners/view/{id}` - Get banner by ID
+- `POST /api/v1/banners/create` - Create new banner (protected)
+- `PUT /api/v1/banners/edit/{id}` - Update banner (protected)
+- `DELETE /api/v1/banners/delete/{id}` - Delete banner (protected)
 
 ### Category Endpoints
 
-- `GET /categories` - List active categories (paginated)
-- `GET /categories/all` - List all categories (paginated)
-- `GET /categories/view/{id}` - Get category by ID
-- `GET /categories/parent/{parentID}` - List categories by parent (paginated)
-- `POST /categories/create` - Create new category (protected)
-- `PUT /categories/edit/{id}` - Update category (protected)
-- `DELETE /categories/delete/{id}` - Delete category (protected)
+- `GET /api/v1/categories` - List active categories (paginated)
+- `GET /api/v1/categories/all` - List all categories (paginated)
+- `GET /api/v1/categories/view/{id}` - Get category by ID
+- `GET /api/v1/categories/parent/{parentID}` - List categories by parent (paginated)
+- `POST /api/v1/categories/create` - Create new category (protected)
+- `PUT /api/v1/categories/edit/{id}` - Update category (protected)
+- `DELETE /api/v1/categories/delete/{id}` - Delete category (protected)
 
 ### Ebook Endpoints
 
-- `GET /ebooks` - List all ebooks (paginated)
-- `GET /ebooks/{id}` - Get ebook by ID
-- `GET /ebooks/slug/{slug}` - Get ebook by slug
-- `GET /ebooks/category/{categoryID}` - List ebooks by category (paginated)
-- `POST /ebooks/create` - Create new ebook (protected)
-- `PUT /ebooks/edit/{id}` - Update ebook (protected)
-- `DELETE /ebooks/delete/{id}` - Delete ebook (protected)
+- `GET /api/v1/ebooks` - List all ebooks (paginated)
+- `GET /api/v1/ebooks/{id}` - Get ebook by ID
+- `GET /api/v1/ebooks/slug/{slug}` - Get ebook by slug
 
-### OAuth2 Endpoints
+### Summary Endpoints
 
-- `POST /oauth2/login` - Initiate OAuth2 login flow
-- `POST /oauth2/callback` - Handle OAuth2 callback
-- `GET /oauth2/providers` - Get available OAuth2 providers
-- `GET /oauth2/{provider}/redirect` - Handle OAuth2 provider redirect
+- `GET /api/v1/summaries` - List summaries (paginated)
+- `GET /api/v1/summaries/{id}` - Get summary by ID
+- `GET /api/v1/summaries/ebook/{ebookID}` - List summaries by ebook ID
+- `POST /api/v1/summaries/create` - Create new summary (protected, requires `summary:create`)
+- `PUT /api/v1/summaries/edit/{id}` - Update summary (protected, requires `summary:update`)
+- `DELETE /api/v1/summaries/delete/{id}` - Delete summary (protected, requires `summary:delete`)
 
-### Protected Endpoints (Requires Firebase or OAuth2 Authentication)
+### Protected Endpoints (Requires Supabase Authentication)
 
-- `GET /users` - Get user profile
-- `PUT /users/update` - Update user profile
-- `DELETE /users/delete` - Delete user account
-- `POST /payments/initiate` - Initiate a new payment
+- `GET /api/v1/users` - Get user profile
+- `PUT /api/v1/users/update` - Update user profile
+- `DELETE /api/v1/users/delete` - Delete user account
+- `POST /api/v1/payments/initiate` - Initiate a new payment
 
 ## OAuth2 Authentication Flow
 
 ### 1. Initiate OAuth2 Login
 
 ```bash
-POST /oauth2/login
+POST /api/v1/oauth2/login
 Content-Type: application/json
 
 {
@@ -246,7 +245,7 @@ The user is redirected to the OAuth2 provider's authorization page where they gr
 The provider redirects back to your application with an authorization code:
 
 ```
-GET /oauth2/google/redirect?code=AUTHORIZATION_CODE&state=STATE
+GET /api/v1/oauth2/google/redirect?code=AUTHORIZATION_CODE&state=STATE
 ```
 
 ### 4. Token Exchange
@@ -264,7 +263,7 @@ The API integrates with Xendit for payment processing. The payment flow works as
 ### Initiating a Payment
 
 ```bash
-POST /payments/initiate
+POST /api/v1/payments/initiate
 Authorization: Bearer <firebase_id_token_or_oauth2_token>
 Content-Type: application/json
 
@@ -296,7 +295,7 @@ Response:
 Xendit will send payment status updates to the callback endpoint:
 
 ```bash
-POST /payments/callback
+POST /api/v1/payments/callback
 Content-Type: application/json
 
 {
@@ -372,7 +371,7 @@ The system supports multiple ebook formats:
 
 #### **List All Ebooks**
 ```bash
-GET /ebooks?limit=10&offset=0
+GET /api/v1/ebooks?limit=10&offset=0
 ```
 
 Response:
@@ -399,7 +398,7 @@ Response:
 
 #### **Get Ebook by ID**
 ```bash
-GET /ebooks/{id}
+GET /api/v1/ebooks/{id}
 ```
 
 Response:
@@ -455,7 +454,7 @@ Response:
 
 #### **Create New Ebook**
 ```bash
-POST /ebooks/create
+POST /api/v1/ebooks/create
 Authorization: Bearer <token>
 Content-Type: application/json
 
@@ -480,7 +479,7 @@ Content-Type: application/json
 
 #### **Update Ebook**
 ```bash
-PUT /ebooks/edit/{id}
+PUT /api/v1/ebooks/edit/{id}
 Authorization: Bearer <token>
 Content-Type: application/json
 
@@ -493,7 +492,7 @@ Content-Type: application/json
 
 #### **List Ebooks by Category**
 ```bash
-GET /ebooks/category/{categoryID}?limit=10&offset=0
+GET /api/v1/ebooks/category/{categoryID}?limit=10&offset=0
 ```
 
 ### Ebook Related Tables

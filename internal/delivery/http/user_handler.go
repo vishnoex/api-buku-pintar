@@ -29,8 +29,9 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Only OAuth2 registration is supported
-	http.Error(w, "Direct registration not supported. Please use OAuth2 authentication.", http.StatusBadRequest)
+	// User sign-up is handled by Supabase Auth. Clients should send the resulting
+	// Supabase access token to protected API routes as a Bearer token.
+	http.Error(w, "Direct registration not supported. Please use Supabase Authentication.", http.StatusBadRequest)
 }
 
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
@@ -94,4 +95,4 @@ func (h *UserHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-} 
+}

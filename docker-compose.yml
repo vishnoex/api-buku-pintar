@@ -13,9 +13,9 @@ services:
       - ./config.json:/app/config.json
       - ./firebase-credentials.json:/app/firebase-credentials.json
     networks:
-      - mysql-8_app-network
+      - vishnet
 
 networks:
-  mysql-8_app-network:
+  vishnet:
     # driver: bridge 
     external: true

@@ -2,9 +2,10 @@ package middleware
 
 import (
 	"buku-pintar/internal/domain/entity"
-	"buku-pintar/pkg/oauth2"
+	"buku-pintar/internal/domain/repository"
+	"buku-pintar/pkg/supabase"
 	"context"
-	"fmt"
+	"errors"
 	"net/http"
 	"strings"
 )
@@ -17,12 +18,14 @@ const (
 )
 
 type AuthMiddleware struct {
-	oauth2Service *oauth2.OAuth2Service
+	supabaseAuth *supabase.Authenticator
+	userRepo     repository.UserRepository
 }
 
-func NewAuthMiddleware(oauth2Service *oauth2.OAuth2Service) *AuthMiddleware {
+func NewAuthMiddleware(supabaseAuth *supabase.Authenticator, userRepo repository.UserRepository) *AuthMiddleware {
 	return &AuthMiddleware{
-		oauth2Service: oauth2Service,
+		supabaseAuth: supabaseAuth,
+		userRepo:     userRepo,
 	}
 }
 
@@ -42,31 +45,32 @@ func (m *AuthMiddleware) Authenticate(next http.Handler) http.Handler {
 			return
 		}
 
-		// Try OAuth2 token validation
-		user, err := m.authenticateWithOAuth2(r.Context(), token)
-		if err == nil && user != nil {
-			// OAuth2 authentication successful
-			ctx := context.WithValue(r.Context(), UserContextKey, user)
-			next.ServeHTTP(w, r.WithContext(ctx))
+		user, err := m.authenticateWithSupabase(r.Context(), token)
+		if err != nil {
+			http.Error(w, "Invalid authentication token", http.StatusUnauthorized)
 			return
 		}
 
-		// Authentication failed
-		http.Error(w, "Invalid authentication token", http.StatusUnauthorized)
+		ctx := context.WithValue(r.Context(), UserContextKey, user)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
-// authenticateWithOAuth2 attempts to authenticate using OAuth2 token
-func (m *AuthMiddleware) authenticateWithOAuth2(ctx context.Context, accessToken string) (*entity.User, error) {
-	// For OAuth2, we would typically validate the token with the provider
-	// and retrieve user information. For now, we'll return nil as this
-	// would require additional implementation to validate OAuth2 tokens.
-	// In a production environment, you might want to:
-	// 1. Store OAuth2 tokens in a secure way
-	// 2. Validate tokens with the respective providers
-	// 3. Implement token refresh logic
-	
-	return nil, fmt.Errorf("OAuth2 token validation not implemented")
+func (m *AuthMiddleware) authenticateWithSupabase(ctx context.Context, accessToken string) (*entity.User, error) {
+	claims, err := m.supabaseAuth.VerifyToken(ctx, accessToken)
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := m.userRepo.GetByID(ctx, claims.Subject)
+	if err != nil {
+		return nil, err
+	}
+	if user != nil {
+		return user, nil
+	}
+
+	return nil, errors.New("verified local user not found")
 }
 
 // GetUserFromContext retrieves the user from the context
@@ -76,4 +80,4 @@ func GetUserFromContext(ctx context.Context) (*entity.User, error) {
 		return nil, nil
 	}
 	return user, nil
-} 
+}

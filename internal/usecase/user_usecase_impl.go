@@ -4,14 +4,13 @@ import (
 	"buku-pintar/internal/domain/entity"
 	"buku-pintar/internal/domain/repository"
 	"buku-pintar/internal/domain/service"
-	"buku-pintar/pkg/oauth2"
 	"context"
 	"errors"
 )
 
 type userUsecase struct {
-	userRepo     repository.UserRepository
-	userService  service.UserService
+	userRepo    repository.UserRepository
+	userService service.UserService
 }
 
 // NewUserUsecase creates a new instance of UserUsecase
@@ -22,8 +21,7 @@ func NewUserUsecase(userRepo repository.UserRepository, userService service.User
 	}
 }
 
-func (u *userUsecase) RegisterWithOAuth2(ctx context.Context, user *entity.User, provider oauth2.Provider) error {
-	// Check if user already exists
+func (u *userUsecase) CreateUser(ctx context.Context, user *entity.User) error {
 	existingUser, err := u.userRepo.GetByEmail(ctx, user.Email)
 	if err != nil {
 		return err
@@ -32,8 +30,7 @@ func (u *userUsecase) RegisterWithOAuth2(ctx context.Context, user *entity.User,
 		return errors.New("user already exists")
 	}
 
-	// Use service for business logic
-	return u.userService.RegisterWithOAuth2(ctx, user, provider)
+	return u.userService.CreateUser(ctx, user)
 }
 
 func (u *userUsecase) GetUserByID(ctx context.Context, id string) (*entity.User, error) {
@@ -68,4 +65,4 @@ func (u *userUsecase) DeleteUser(ctx context.Context, id string) error {
 	}
 
 	return u.userService.DeleteUser(ctx, id)
-} 
+}

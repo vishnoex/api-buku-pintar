@@ -1,6 +1,6 @@
 CREATE TABLE `oauth_tokens` (
     `id` CHAR(36) PRIMARY KEY,
-    `user_id` CHAR(36) NOT NULL,
+    `user_id` VARCHAR(36) NOT NULL,
     `provider` VARCHAR(20) NOT NULL,
     `access_token` TEXT NOT NULL,
     `refresh_token` TEXT,
@@ -10,4 +10,4 @@ CREATE TABLE `oauth_tokens` (
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
     INDEX `idx_user_provider` (`user_id`, `provider`)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

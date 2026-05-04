@@ -48,13 +48,13 @@
 - [x] User login tracking
 
 **Endpoints:**
-- `POST /oauth2/login` - Initiate OAuth2 login
-- `POST /oauth2/callback` - Handle OAuth2 callback
-- `GET /oauth2/providers` - Get available providers
-- `GET /oauth2/{provider}/redirect` - Provider redirect handler
-- `GET /users` - Get user profile (protected)
-- `PUT /users/update` - Update user (protected)
-- `DELETE /users/delete` - Delete user (protected)
+- `POST /api/v1/oauth2/login` - Initiate OAuth2 login
+- `POST /api/v1/oauth2/callback` - Handle OAuth2 callback
+- `GET /api/v1/oauth2/providers` - Get available providers
+- `GET /api/v1/oauth2/{provider}/redirect` - Provider redirect handler
+- `GET /api/v1/users` - Get user profile (protected)
+- `PUT /api/v1/users/update` - Update user (protected)
+- `DELETE /api/v1/users/delete` - Delete user (protected)
 
 ### 2. Category Module ✓
 - [x] Category entity definition
@@ -67,13 +67,13 @@
 - [x] Active/inactive filtering
 
 **Endpoints:**
-- `GET /categories` - List active categories
-- `GET /categories/all` - List all categories
-- `GET /categories/view/{id}` - Get category by ID
-- `GET /categories/parent/{parentID}` - List by parent
-- `POST /categories/create` - Create category (protected)
-- `PUT /categories/edit/{id}` - Update category (protected)
-- `DELETE /categories/delete/{id}` - Delete category (protected)
+- `GET /api/v1/categories` - List active categories
+- `GET /api/v1/categories/all` - List all categories
+- `GET /api/v1/categories/view/{id}` - Get category by ID
+- `GET /api/v1/categories/parent/{parentID}` - List by parent
+- `POST /api/v1/categories/create` - Create category (protected)
+- `PUT /api/v1/categories/edit/{id}` - Update category (protected)
+- `DELETE /api/v1/categories/delete/{id}` - Delete category (protected)
 
 ### 3. Banner Module ✓
 - [x] Banner entity definition
@@ -85,12 +85,12 @@
 - [x] Active/inactive filtering
 
 **Endpoints:**
-- `GET /banners` - List all banners
-- `GET /banners/active` - List active banners
-- `GET /banners/view/{id}` - Get banner by ID
-- `POST /banners/create` - Create banner (protected)
-- `PUT /banners/edit/{id}` - Update banner (protected)
-- `DELETE /banners/delete/{id}` - Delete banner (protected)
+- `GET /api/v1/banners` - List all banners
+- `GET /api/v1/banners/active` - List active banners
+- `GET /api/v1/banners/view/{id}` - Get banner by ID
+- `POST /api/v1/banners/create` - Create banner (protected)
+- `PUT /api/v1/banners/edit/{id}` - Update banner (protected)
+- `DELETE /api/v1/banners/delete/{id}` - Delete banner (protected)
 
 ### 4. Ebook Module ✓
 - [x] Ebook entity definition
@@ -105,9 +105,9 @@
 - [x] Discount system integration
 
 **Endpoints:**
-- `GET /ebooks` - List all ebooks
-- `GET /ebooks/{id}` - Get ebook by ID
-- `GET /ebooks/slug/{slug}` - Get ebook by slug
+- `GET /api/v1/ebooks` - List all ebooks
+- `GET /api/v1/ebooks/{id}` - Get ebook by ID
+- `GET /api/v1/ebooks/slug/{slug}` - Get ebook by slug
 
 **Database Tables:**
 - [x] `ebooks` table
@@ -127,12 +127,12 @@
 - [x] Audio summaries support
 
 **Endpoints:**
-- `GET /summaries` - List summaries
-- `GET /summaries/{id}` - Get summary by ID
-- `GET /summaries/ebook/{ebookID}` - Get summaries by ebook
-- `POST /summaries/create` - Create summary (protected)
-- `PUT /summaries/edit/{id}` - Update summary (protected)
-- `DELETE /summaries/delete/{id}` - Delete summary (protected)
+- `GET /api/v1/summaries` - List summaries
+- `GET /api/v1/summaries/{id}` - Get summary by ID
+- `GET /api/v1/summaries/ebook/{ebookID}` - Get summaries by ebook
+- `POST /api/v1/summaries/create` - Create summary (protected)
+- `PUT /api/v1/summaries/edit/{id}` - Update summary (protected)
+- `DELETE /api/v1/summaries/delete/{id}` - Delete summary (protected)
 
 ### 6. Payment Module ✓
 - [x] Payment entity definition
@@ -143,8 +143,8 @@
 - [x] Payment webhook callback
 
 **Endpoints:**
-- `POST /payments/initiate` - Initiate payment (protected)
-- `POST /payments/callback` - Xendit webhook callback
+- `POST /api/v1/payments/initiate` - Initiate payment (protected)
+- `POST /api/v1/payments/callback` - Xendit webhook callback
 
 ---
 
@@ -170,16 +170,16 @@
 - [ ] Seeder implementation
 
 **Required Endpoints:**
-- [ ] `GET /articles` - List published articles
-- [ ] `GET /articles/{id}` - Get article by ID
-- [ ] `GET /articles/slug/{slug}` - Get article by slug
-- [ ] `GET /articles/author/{authorID}` - List by author
-- [ ] `GET /articles/category/{categoryID}` - List by category
-- [ ] `POST /articles/create` - Create article (protected)
-- [ ] `PUT /articles/edit/{id}` - Update article (protected)
-- [ ] `DELETE /articles/delete/{id}` - Delete article (protected)
-- [ ] `POST /articles/{id}/publish` - Publish article (protected)
-- [ ] `POST /articles/{id}/unpublish` - Unpublish article (protected)
+- [ ] `GET /api/v1/articles` - List published articles
+- [ ] `GET /api/v1/articles/{id}` - Get article by ID
+- [ ] `GET /api/v1/articles/slug/{slug}` - Get article by slug
+- [ ] `GET /api/v1/articles/author/{authorID}` - List by author
+- [ ] `GET /api/v1/articles/category/{categoryID}` - List by category
+- [ ] `POST /api/v1/articles/create` - Create article (protected)
+- [ ] `PUT /api/v1/articles/edit/{id}` - Update article (protected)
+- [ ] `DELETE /api/v1/articles/delete/{id}` - Delete article (protected)
+- [ ] `POST /api/v1/articles/{id}/publish` - Publish article (protected)
+- [ ] `POST /api/v1/articles/{id}/unpublish` - Unpublish article (protected)
 
 ### 8. Inspiration Module (Priority: High)
 - [x] Inspiration entity defined
@@ -200,15 +200,15 @@
 - [ ] Seeder implementation
 
 **Required Endpoints:**
-- [ ] `GET /inspirations` - List published inspirations
-- [ ] `GET /inspirations/{id}` - Get inspiration by ID
-- [ ] `GET /inspirations/slug/{slug}` - Get inspiration by slug
-- [ ] `GET /inspirations/author/{authorID}` - List by author
-- [ ] `GET /inspirations/category/{categoryID}` - List by category
-- [ ] `POST /inspirations/create` - Create inspiration (protected)
-- [ ] `PUT /inspirations/edit/{id}` - Update inspiration (protected)
-- [ ] `DELETE /inspirations/delete/{id}` - Delete inspiration (protected)
-- [ ] `POST /inspirations/{id}/publish` - Publish inspiration (protected)
+- [ ] `GET /api/v1/inspirations` - List published inspirations
+- [ ] `GET /api/v1/inspirations/{id}` - Get inspiration by ID
+- [ ] `GET /api/v1/inspirations/slug/{slug}` - Get inspiration by slug
+- [ ] `GET /api/v1/inspirations/author/{authorID}` - List by author
+- [ ] `GET /api/v1/inspirations/category/{categoryID}` - List by category
+- [ ] `POST /api/v1/inspirations/create` - Create inspiration (protected)
+- [ ] `PUT /api/v1/inspirations/edit/{id}` - Update inspiration (protected)
+- [ ] `DELETE /api/v1/inspirations/delete/{id}` - Delete inspiration (protected)
+- [ ] `POST /api/v1/inspirations/{id}/publish` - Publish inspiration (protected)
 
 ### 9. Author Module (Priority: Medium)
 - [x] Author entity defined
@@ -227,12 +227,12 @@
 - [ ] Seeder implementation
 
 **Required Endpoints:**
-- [ ] `GET /authors` - List authors
-- [ ] `GET /authors/{id}` - Get author by ID
-- [ ] `GET /authors/slug/{slug}` - Get author by slug
-- [ ] `POST /authors/create` - Create author (protected)
-- [ ] `PUT /authors/edit/{id}` - Update author (protected)
-- [ ] `DELETE /authors/delete/{id}` - Delete author (protected)
+- [ ] `GET /api/v1/authors` - List authors
+- [ ] `GET /api/v1/authors/{id}` - Get author by ID
+- [ ] `GET /api/v1/authors/slug/{slug}` - Get author by slug
+- [ ] `POST /api/v1/authors/create` - Create author (protected)
+- [ ] `PUT /api/v1/authors/edit/{id}` - Update author (protected)
+- [ ] `DELETE /api/v1/authors/delete/{id}` - Delete author (protected)
 
 ### 10. SEO Metadata Module (Priority: Medium)
 - [x] SEO metadata entity defined

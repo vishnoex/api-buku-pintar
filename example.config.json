@@ -1,6 +1,12 @@
 {
-    "firebase": {
-        "credentials_file": "./firebase-credentials.json"
+    "supabase": {
+        "project_url": "https://your-project-ref.supabase.co",
+        "anon_key": "your-supabase-anon-key",
+        "jwt_secret": "your-supabase-jwt-secret-for-hs256-projects",
+        "jwks_url": "",
+        "issuer": "",
+        "audience": "authenticated",
+        "email_redirect_to": "https://app.com/verify"
     },
     "payment": {
         "xendit": {
@@ -26,26 +32,5 @@
     "app": {
         "port": "8080",
         "environment": "local"
-    },
-    "oauth2": {
-        "google": {
-            "client_id": "your_google_client_id",
-            "client_secret": "your_google_client_secret",
-            "redirect_url": "http://localhost:8080/oauth2/google/redirect"
-        },
-        "github": {
-            "client_id": "your_github_client_id",
-            "client_secret": "your_github_client_secret",
-            "redirect_url": "http://localhost:8080/oauth2/github/redirect"
-        },
-        "facebook": {
-            "client_id": "your_facebook_client_id",
-            "client_secret": "your_facebook_client_secret",
-            "redirect_url": "http://localhost:8080/oauth2/facebook/redirect"
-        }
-    },
-    "security": {
-        "token_encryption_key": "your-32-byte-encryption-key-here-change-this",
-        "jwt_secret": "your-jwt-secret-key-here-change-this"
     }
 } 
