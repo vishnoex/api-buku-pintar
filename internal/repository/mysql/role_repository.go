@@ -5,6 +5,7 @@ import (
 	"buku-pintar/internal/domain/repository"
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 )
 
@@ -19,6 +20,10 @@ func NewRoleRepository(db *sql.DB) repository.RoleRepository {
 
 // Create creates a new role
 func (r *roleRepository) Create(ctx context.Context, role *entity.Role) error {
+	if role == nil {
+		return errors.New("role is nil")
+	}
+
 	query := `INSERT INTO roles (id, name, description, created_at, updated_at) 
 		VALUES (?, ?, ?, ?, ?)`
 
@@ -51,7 +56,7 @@ func (r *roleRepository) GetByID(ctx context.Context, id string) (*entity.Role, 
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil
+			return nil, err
 		}
 		return nil, err
 	}
@@ -74,7 +79,7 @@ func (r *roleRepository) GetByName(ctx context.Context, name string) (*entity.Ro
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, nil
+			return nil, err
 		}
 		return nil, err
 	}
@@ -84,27 +89,51 @@ func (r *roleRepository) GetByName(ctx context.Context, name string) (*entity.Ro
 
 // Update updates an existing role
 func (r *roleRepository) Update(ctx context.Context, role *entity.Role) error {
+	if role == nil {
+		return errors.New("role is nil")
+	}
+
 	query := `UPDATE roles 
 		SET name = ?, description = ?, updated_at = ? 
 		WHERE id = ?`
 
 	role.UpdatedAt = time.Now()
 
-	_, err := r.db.ExecContext(ctx, query,
+	result, err := r.db.ExecContext(ctx, query,
 		role.Name,
 		role.Description,
 		role.UpdatedAt,
 		role.ID,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("role not found")
+	}
+	return nil
 }
 
 // Delete deletes a role by its ID
 func (r *roleRepository) Delete(ctx context.Context, id string) error {
 	query := `DELETE FROM roles WHERE id = ?`
 
-	_, err := r.db.ExecContext(ctx, query, id)
-	return err
+	result, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("role not found")
+	}
+	return nil
 }
 
 // List retrieves all roles with pagination
@@ -151,7 +180,7 @@ func (r *roleRepository) Count(ctx context.Context) (int64, error) {
 
 // GetPermissionsByRoleID retrieves all permissions for a specific role
 func (r *roleRepository) GetPermissionsByRoleID(ctx context.Context, roleID string) ([]*entity.Permission, error) {
-	query := `SELECT p.id, p.name, p.resource, p.action, p.description, p.created_at 
+	query := `SELECT p.id, p.name, p.description, p.resource, p.action, p.created_at, p.updated_at 
 		FROM permissions p
 		INNER JOIN role_permissions rp ON p.id = rp.permission_id
 		WHERE rp.role_id = ?
@@ -169,10 +198,11 @@ func (r *roleRepository) GetPermissionsByRoleID(ctx context.Context, roleID stri
 		err = rows.Scan(
 			&permission.ID,
 			&permission.Name,
+			&permission.Description,
 			&permission.Resource,
 			&permission.Action,
-			&permission.Description,
 			&permission.CreatedAt,
+			&permission.UpdatedAt,
 		)
 		if err != nil {
 			return nil, err
@@ -189,10 +219,9 @@ func (r *roleRepository) GetPermissionsByRoleID(ctx context.Context, roleID stri
 
 // AssignPermissionToRole assigns a single permission to a role
 func (r *roleRepository) AssignPermissionToRole(ctx context.Context, roleID, permissionID string) error {
-	query := `INSERT INTO role_permissions (role_id, permission_id) VALUES (?, ?)
-		ON DUPLICATE KEY UPDATE role_id = role_id` // Ignore if already exists
+	query := `INSERT INTO role_permissions (id, role_id, permission_id, created_at) VALUES (?, ?, ?, ?)`
 
-	_, err := r.db.ExecContext(ctx, query, roleID, permissionID)
+	_, err := r.db.ExecContext(ctx, query, roleID+":"+permissionID, roleID, permissionID, time.Now())
 	return err
 }
 
@@ -200,8 +229,18 @@ func (r *roleRepository) AssignPermissionToRole(ctx context.Context, roleID, per
 func (r *roleRepository) RemovePermissionFromRole(ctx context.Context, roleID, permissionID string) error {
 	query := `DELETE FROM role_permissions WHERE role_id = ? AND permission_id = ?`
 
-	_, err := r.db.ExecContext(ctx, query, roleID, permissionID)
-	return err
+	result, err := r.db.ExecContext(ctx, query, roleID, permissionID)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("role permission not found")
+	}
+	return nil
 }
 
 // AssignPermissionsToRole assigns multiple permissions to a role (bulk operation)
@@ -246,7 +285,7 @@ func (r *roleRepository) RemoveAllPermissionsFromRole(ctx context.Context, roleI
 
 // GetUsersByRoleID retrieves all users with a specific role
 func (r *roleRepository) GetUsersByRoleID(ctx context.Context, roleID string, limit, offset int) ([]*entity.User, error) {
-	query := `SELECT id, name, email, role_id, password, role, avatar, status, created_at, updated_at 
+	query := `SELECT id, email, name, avatar, role_id, created_at, updated_at 
 		FROM users WHERE role_id = ? 
 		ORDER BY created_at DESC LIMIT ? OFFSET ?`
 
@@ -261,13 +300,10 @@ func (r *roleRepository) GetUsersByRoleID(ctx context.Context, roleID string, li
 		user := &entity.User{}
 		err = rows.Scan(
 			&user.ID,
-			&user.Name,
 			&user.Email,
-			&user.RoleID,
-			&user.Password,
-			&user.Role,
+			&user.Name,
 			&user.Avatar,
-			&user.Status,
+			&user.RoleID,
 			&user.CreatedAt,
 			&user.UpdatedAt,
 		)

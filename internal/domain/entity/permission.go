@@ -11,6 +11,7 @@ type Permission struct {
 	Action      string    `db:"action" json:"action"`
 	Description *string   `db:"description" json:"description"`
 	CreatedAt   time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time `db:"updated_at" json:"updated_at"`
 }
 
 // ResourceType represents the type of resource in the system

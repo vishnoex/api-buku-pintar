@@ -1,18 +1,18 @@
 package constant
 
 const (
-	INVALID_URL_PATH         string = "invalid URL path"
-	EBOOK_ID_REQUIRED        string = "ebook ID is required"
-	EBOOK_NOT_FOUND          string = "ebook not found"
-	CATEGORY_ID_REQUIRED     string = "category ID is required"
-	SUMMARY_ID_REQUIRED      string = "summary ID is required"
-	SUMMARY_NOT_FOUND        string = "summary not found"
+	INVALID_URL_PATH             string = "invalid URL path"
+	EBOOK_ID_REQUIRED            string = "ebook ID is required"
+	EBOOK_NOT_FOUND              string = "ebook not found"
+	CATEGORY_ID_REQUIRED         string = "category ID is required"
+	SUMMARY_ID_REQUIRED          string = "summary ID is required"
+	SUMMARY_NOT_FOUND            string = "summary not found"
 	EBOOK_ID_REQUIRED_VALIDATION string = "ebook_id is required"
-	DESCRIPTION_REQUIRED    string = "description is required"
-	ERR_BANNER_ID_REQUIRED   string = "banner ID is required"
-	ERR_CATEGORY_ID_REQUIRED string = "category ID is required"
-	ERR_AUTHOR_ID_REQUIRED   string = "author ID is required"
-	ERR_ID_REQUIRED          string = "id is required"
+	DESCRIPTION_REQUIRED         string = "description is required"
+	ERR_BANNER_ID_REQUIRED       string = "banner ID is required"
+	ERR_CATEGORY_ID_REQUIRED     string = "category ID is required"
+	ERR_AUTHOR_ID_REQUIRED       string = "author ID is required"
+	ERR_ID_REQUIRED              string = "id is required"
 
 	ERR_CODE_SERVER_ERROR  string = "internal_server_error"
 	ERR_CODE_BAD_REQUEST   string = "bad_request"
@@ -21,4 +21,5 @@ const (
 	ERR_METHOD_NOT_ALLOWED string = "method not allowed"
 
 	ERR_NOT_IMPLEMENTED string = "not implemented yet"
+	ERR_PERMISSION_NILL string = "permission is nil"
 )

@@ -1,10 +1,12 @@
 package mysql
 
 import (
+	"buku-pintar/internal/constant"
 	"buku-pintar/internal/domain/entity"
 	"buku-pintar/internal/domain/repository"
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -21,6 +23,10 @@ func NewPermissionRepository(db *sql.DB) repository.PermissionRepository {
 
 // Create creates a new permission
 func (r *permissionRepository) Create(ctx context.Context, permission *entity.Permission) error {
+	if permission == nil {
+		return errors.New(constant.ERR_PERMISSION_NILL)
+	}
+
 	query := `INSERT INTO permissions (id, name, description, resource, action, created_at) 
 		VALUES (?, ?, ?, ?, ?, ?)`
 
@@ -40,7 +46,7 @@ func (r *permissionRepository) Create(ctx context.Context, permission *entity.Pe
 
 // GetByID retrieves a permission by its ID
 func (r *permissionRepository) GetByID(ctx context.Context, id string) (*entity.Permission, error) {
-	query := `SELECT id, name, description, resource, action, created_at 
+	query := `SELECT id, name, description, resource, action, created_at, updated_at 
 		FROM permissions WHERE id = ?`
 
 	permission := &entity.Permission{}
@@ -51,10 +57,11 @@ func (r *permissionRepository) GetByID(ctx context.Context, id string) (*entity.
 		&permission.Resource,
 		&permission.Action,
 		&permission.CreatedAt,
+		&permission.UpdatedAt,
 	)
 
 	if err == sql.ErrNoRows {
-		return nil, nil
+		return nil, err
 	}
 	if err != nil {
 		return nil, err
@@ -65,7 +72,7 @@ func (r *permissionRepository) GetByID(ctx context.Context, id string) (*entity.
 
 // GetByName retrieves a permission by its name
 func (r *permissionRepository) GetByName(ctx context.Context, name string) (*entity.Permission, error) {
-	query := `SELECT id, name, description, resource, action, created_at 
+	query := `SELECT id, name, description, resource, action, created_at, updated_at 
 		FROM permissions WHERE name = ?`
 
 	permission := &entity.Permission{}
@@ -76,10 +83,11 @@ func (r *permissionRepository) GetByName(ctx context.Context, name string) (*ent
 		&permission.Resource,
 		&permission.Action,
 		&permission.CreatedAt,
+		&permission.UpdatedAt,
 	)
 
 	if err == sql.ErrNoRows {
-		return nil, nil
+		return nil, err
 	}
 	if err != nil {
 		return nil, err
@@ -90,30 +98,54 @@ func (r *permissionRepository) GetByName(ctx context.Context, name string) (*ent
 
 // Update updates a permission
 func (r *permissionRepository) Update(ctx context.Context, permission *entity.Permission) error {
+	if permission == nil {
+		return errors.New(constant.ERR_PERMISSION_NILL)
+	}
+
 	query := `UPDATE permissions 
 		SET name = ?, description = ?, resource = ?, action = ? 
 		WHERE id = ?`
 
-	_, err := r.db.ExecContext(ctx, query,
+	result, err := r.db.ExecContext(ctx, query,
 		permission.Name,
 		permission.Description,
 		permission.Resource,
 		permission.Action,
 		permission.ID,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("permission not found")
+	}
+	return nil
 }
 
 // Delete deletes a permission by its ID
 func (r *permissionRepository) Delete(ctx context.Context, id string) error {
 	query := `DELETE FROM permissions WHERE id = ?`
-	_, err := r.db.ExecContext(ctx, query, id)
-	return err
+	result, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("permission not found")
+	}
+	return nil
 }
 
 // List retrieves all permissions with pagination
 func (r *permissionRepository) List(ctx context.Context, limit, offset int) ([]*entity.Permission, error) {
-	query := `SELECT id, name, description, resource, action, created_at 
+	query := `SELECT id, name, description, resource, action, created_at, updated_at 
 		FROM permissions 
 		ORDER BY created_at DESC 
 		LIMIT ? OFFSET ?`
@@ -134,6 +166,7 @@ func (r *permissionRepository) List(ctx context.Context, limit, offset int) ([]*
 			&permission.Resource,
 			&permission.Action,
 			&permission.CreatedAt,
+			&permission.UpdatedAt,
 		)
 		if err != nil {
 			return nil, err
@@ -159,7 +192,7 @@ func (r *permissionRepository) Count(ctx context.Context) (int64, error) {
 
 // ListByResource retrieves permissions by resource type
 func (r *permissionRepository) ListByResource(ctx context.Context, resource string, limit, offset int) ([]*entity.Permission, error) {
-	query := `SELECT id, name, description, resource, action, created_at 
+	query := `SELECT id, name, description, resource, action, created_at, updated_at 
 		FROM permissions 
 		WHERE resource = ?
 		ORDER BY action ASC 
@@ -181,6 +214,7 @@ func (r *permissionRepository) ListByResource(ctx context.Context, resource stri
 			&permission.Resource,
 			&permission.Action,
 			&permission.CreatedAt,
+			&permission.UpdatedAt,
 		)
 		if err != nil {
 			return nil, err
@@ -193,7 +227,7 @@ func (r *permissionRepository) ListByResource(ctx context.Context, resource stri
 
 // ListByAction retrieves permissions by action type
 func (r *permissionRepository) ListByAction(ctx context.Context, action string, limit, offset int) ([]*entity.Permission, error) {
-	query := `SELECT id, name, description, resource, action, created_at 
+	query := `SELECT id, name, description, resource, action, created_at, updated_at 
 		FROM permissions 
 		WHERE action = ?
 		ORDER BY resource ASC 
@@ -215,6 +249,7 @@ func (r *permissionRepository) ListByAction(ctx context.Context, action string, 
 			&permission.Resource,
 			&permission.Action,
 			&permission.CreatedAt,
+			&permission.UpdatedAt,
 		)
 		if err != nil {
 			return nil, err
@@ -227,7 +262,7 @@ func (r *permissionRepository) ListByAction(ctx context.Context, action string, 
 
 // ListByResourceAndAction retrieves permissions by resource and action
 func (r *permissionRepository) ListByResourceAndAction(ctx context.Context, resource, action string, limit, offset int) ([]*entity.Permission, error) {
-	query := `SELECT id, name, description, resource, action, created_at 
+	query := `SELECT id, name, description, resource, action, created_at, updated_at 
 		FROM permissions 
 		WHERE resource = ? AND action = ?
 		ORDER BY created_at DESC 
@@ -249,6 +284,7 @@ func (r *permissionRepository) ListByResourceAndAction(ctx context.Context, reso
 			&permission.Resource,
 			&permission.Action,
 			&permission.CreatedAt,
+			&permission.UpdatedAt,
 		)
 		if err != nil {
 			return nil, err
@@ -311,7 +347,7 @@ func (r *permissionRepository) CountRolesByPermissionID(ctx context.Context, per
 
 // GetPermissionsByUserID retrieves all permissions for a user through their role
 func (r *permissionRepository) GetPermissionsByUserID(ctx context.Context, userID string) ([]*entity.Permission, error) {
-	query := `SELECT DISTINCT p.id, p.name, p.description, p.resource, p.action, p.created_at 
+	query := `SELECT DISTINCT p.id, p.name, p.description, p.resource, p.action, p.created_at, p.updated_at 
 		FROM permissions p
 		INNER JOIN role_permissions rp ON p.id = rp.permission_id
 		INNER JOIN roles r ON rp.role_id = r.id
@@ -335,6 +371,7 @@ func (r *permissionRepository) GetPermissionsByUserID(ctx context.Context, userI
 			&permission.Resource,
 			&permission.Action,
 			&permission.CreatedAt,
+			&permission.UpdatedAt,
 		)
 		if err != nil {
 			return nil, err
@@ -347,22 +384,19 @@ func (r *permissionRepository) GetPermissionsByUserID(ctx context.Context, userI
 
 // HasPermission checks if a user has a specific permission
 func (r *permissionRepository) HasPermission(ctx context.Context, userID, permissionName string) (bool, error) {
-	query := `SELECT EXISTS(
-		SELECT 1 
-		FROM permissions p
-		INNER JOIN role_permissions rp ON p.id = rp.permission_id
-		INNER JOIN roles r ON rp.role_id = r.id
-		INNER JOIN users u ON u.role_id = r.id
-		WHERE u.id = ? AND p.name = ?
-	)`
+	query := `SELECT COUNT(*) FROM users u
+		INNER JOIN roles r ON u.role_id = r.id
+		INNER JOIN role_permissions rp ON r.id = rp.role_id
+		INNER JOIN permissions p ON p.id = rp.permission_id
+		WHERE u.id = ? AND p.name = ?`
 
-	var exists bool
-	err := r.db.QueryRowContext(ctx, query, userID, permissionName).Scan(&exists)
+	var count int
+	err := r.db.QueryRowContext(ctx, query, userID, permissionName).Scan(&count)
 	if err != nil {
 		return false, err
 	}
 
-	return exists, nil
+	return count > 0, nil
 }
 
 // HasPermissions checks if a user has all specified permissions (AND logic)
@@ -400,7 +434,7 @@ func (r *permissionRepository) HasPermissions(ctx context.Context, userID string
 // CreateBulk creates multiple permissions in a single transaction
 func (r *permissionRepository) CreateBulk(ctx context.Context, permissions []*entity.Permission) error {
 	if len(permissions) == 0 {
-		return nil
+		return errors.New("permissions list is empty")
 	}
 
 	tx, err := r.db.BeginTx(ctx, nil)
@@ -412,17 +446,14 @@ func (r *permissionRepository) CreateBulk(ctx context.Context, permissions []*en
 	query := `INSERT INTO permissions (id, name, description, resource, action, created_at) 
 		VALUES (?, ?, ?, ?, ?, ?)`
 
-	stmt, err := tx.PrepareContext(ctx, query)
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
 	now := time.Now()
 	for _, permission := range permissions {
+		if permission == nil {
+			return errors.New(constant.ERR_PERMISSION_NILL)
+		}
 		permission.CreatedAt = now
 
-		_, err := stmt.ExecContext(ctx,
+		_, err := tx.ExecContext(ctx, query,
 			permission.ID,
 			permission.Name,
 			permission.Description,
@@ -441,7 +472,7 @@ func (r *permissionRepository) CreateBulk(ctx context.Context, permissions []*en
 // GetByNames retrieves multiple permissions by their names
 func (r *permissionRepository) GetByNames(ctx context.Context, names []string) ([]*entity.Permission, error) {
 	if len(names) == 0 {
-		return []*entity.Permission{}, nil
+		return nil, errors.New("permission names list is empty")
 	}
 
 	// Build IN clause with placeholders
@@ -452,7 +483,7 @@ func (r *permissionRepository) GetByNames(ctx context.Context, names []string) (
 		args[i] = name
 	}
 
-	query := fmt.Sprintf(`SELECT id, name, description, resource, action, created_at 
+	query := fmt.Sprintf(`SELECT id, name, description, resource, action, created_at, updated_at 
 		FROM permissions 
 		WHERE name IN (%s)
 		ORDER BY resource ASC, action ASC`, strings.Join(placeholders, ","))
@@ -473,6 +504,7 @@ func (r *permissionRepository) GetByNames(ctx context.Context, names []string) (
 			&permission.Resource,
 			&permission.Action,
 			&permission.CreatedAt,
+			&permission.UpdatedAt,
 		)
 		if err != nil {
 			return nil, err

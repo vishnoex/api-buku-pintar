@@ -149,7 +149,7 @@ func TestRoleRepository_List(t *testing.T) {
 			AddRow("role-1", "admin", "Admin role", now, now).
 			AddRow("role-2", "editor", "Editor role", now, now)
 
-		mock.ExpectQuery("SELECT (.+) FROM roles ORDER BY created_at DESC LIMIT ? OFFSET ?").
+		mock.ExpectQuery("SELECT (.+) FROM roles ORDER BY created_at DESC LIMIT \\? OFFSET \\?").
 			WithArgs(10, 0).
 			WillReturnRows(rows)
 
@@ -164,7 +164,7 @@ func TestRoleRepository_List(t *testing.T) {
 	t.Run("empty result", func(t *testing.T) {
 		rows := sqlmock.NewRows([]string{"id", "name", "description", "created_at", "updated_at"})
 
-		mock.ExpectQuery("SELECT (.+) FROM roles ORDER BY created_at DESC LIMIT ? OFFSET ?").
+		mock.ExpectQuery("SELECT (.+) FROM roles ORDER BY created_at DESC LIMIT \\? OFFSET \\?").
 			WithArgs(10, 0).
 			WillReturnRows(rows)
 

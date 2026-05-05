@@ -52,13 +52,17 @@ func ParseEbookListResponse(ebook *entity.EbookList) *EbookListResponse {
 }
 
 func ParseEbookResponse(ebook *entity.EbookDetail) *EbookResponse {
+	if ebook == nil {
+		return nil
+	}
+
 	// Format the published date as string
 	var publishedAtStr string
 	if ebook.PublishedAt != nil {
 		publishedAtStr = ebook.PublishedAt.Format("2006-01-02T15:04:05Z07:00")
 	}
 
-	return &EbookResponse{
+	res := &EbookResponse{
 		ID:          ebook.ID,
 		Title:       ebook.Title,
 		Synopsis:    ebook.Synopsis,
@@ -83,16 +87,27 @@ func ParseEbookResponse(ebook *entity.EbookDetail) *EbookResponse {
 		Category:        nil,
 		Discount:        nil,
 		TableOfContents: []*TableOfContentResponse{},
-		Summary: &EbookSummaryResponse{
-			ID:          *ebook.SummaryID,
-			EbookID:     ebook.ID,
-			EbookTitle:  ebook.Title,
-			Slug:        ebook.Slug,
-			Description: *ebook.SummaryContent,
-			URL:         ebook.URL,
-			AudioURL:    *ebook.SummaryAudioURL,
-			Duration:    strconv.Itoa(*ebook.SummaryDuration),
-		},
-		PremiumSummary: nil,
+		Summary:         nil,
+		PremiumSummary:  nil,
 	}
+	if ebook.SummaryID != nil {
+		res.Summary = &EbookSummaryResponse{
+			ID:         *ebook.SummaryID,
+			EbookID:    ebook.ID,
+			EbookTitle: ebook.Title,
+			Slug:       ebook.Slug,
+			URL:        ebook.URL,
+		}
+		if ebook.SummaryContent != nil {
+			res.Summary.Description = *ebook.SummaryContent
+		}
+		if ebook.SummaryAudioURL != nil {
+			res.Summary.AudioURL = *ebook.SummaryAudioURL
+		}
+		if ebook.SummaryDuration != nil {
+			res.Summary.Duration = strconv.Itoa(*ebook.SummaryDuration)
+		}
+	}
+
+	return res
 }
