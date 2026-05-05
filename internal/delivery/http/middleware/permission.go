@@ -16,7 +16,15 @@ import (
 type contextKey string
 
 const (
-	PermissionsContextKey contextKey = "user_permissions"
+	PermissionsContextKey         contextKey = "user_permissions"
+	checkedPermissionContextKey   contextKey = "checked_permission"
+	resourceOwnerContextKey       contextKey = "resource_owner"
+	resourceIDContextKey          contextKey = "resource_id"
+	ownershipPermissionFormat                = "ownership:%s:%s"
+	permissionOwnershipFormat                = "%s|ownership:%s"
+	rolePermissionFormat                     = "role:%s"
+	authenticationRequiredMessage            = "Authentication required"
+	checkErrorFormat                         = "check_error: %v"
 )
 
 // PermissionMiddleware handles fine-grained permission-based access control
@@ -66,36 +74,36 @@ func (m *PermissionMiddleware) CheckPermission(permissionName string) func(http.
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			startTime := time.Now()
-			
+
 			// Get user from context
 			user, err := GetUserFromContext(r.Context())
 			if err != nil || user == nil {
 				m.logPermissionCheck(r.Context(), "", permissionName, false, "user_not_found", time.Since(startTime))
-				m.respondWithError(w, http.StatusUnauthorized, "Authentication required", permissionName)
+				m.respondWithError(w, http.StatusUnauthorized, authenticationRequiredMessage, permissionName)
 				return
 			}
 
 			// Check permission
 			hasPermission, err := m.permissionService.HasPermission(r.Context(), user.ID, permissionName)
 			if err != nil {
-				m.logPermissionCheck(r.Context(), user.ID, permissionName, false, fmt.Sprintf("check_error: %v", err), time.Since(startTime))
+				m.logPermissionCheck(r.Context(), user.ID, permissionName, false, fmt.Sprintf(checkErrorFormat, err), time.Since(startTime))
 				m.respondWithError(w, http.StatusInternalServerError, "Failed to verify permission", permissionName)
 				return
 			}
 
 			if !hasPermission {
 				m.logPermissionCheck(r.Context(), user.ID, permissionName, false, "permission_denied", time.Since(startTime))
-				m.respondWithError(w, http.StatusForbidden, 
+				m.respondWithError(w, http.StatusForbidden,
 					fmt.Sprintf("Permission denied: requires '%s'", permissionName), permissionName)
 				return
 			}
 
 			// Permission granted
 			m.logPermissionCheck(r.Context(), user.ID, permissionName, true, "granted", time.Since(startTime))
-			
+
 			// Add permission info to context for debugging
 			if m.debugMode {
-				ctx := context.WithValue(r.Context(), "checked_permission", permissionName)
+				ctx := context.WithValue(r.Context(), checkedPermissionContextKey, permissionName)
 				r = r.WithContext(ctx)
 			}
 
@@ -110,17 +118,17 @@ func (m *PermissionMiddleware) CheckRole(roleName string) func(http.Handler) htt
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			startTime := time.Now()
-			
+
 			user, err := GetUserFromContext(r.Context())
 			if err != nil || user == nil {
-				m.logPermissionCheck(r.Context(), "", fmt.Sprintf("role:%s", roleName), false, "user_not_found", time.Since(startTime))
-				m.respondWithError(w, http.StatusUnauthorized, "Authentication required", roleName)
+				m.logPermissionCheck(r.Context(), "", fmt.Sprintf(rolePermissionFormat, roleName), false, "user_not_found", time.Since(startTime))
+				m.respondWithError(w, http.StatusUnauthorized, authenticationRequiredMessage, roleName)
 				return
 			}
 
 			// Check if user has a role assigned
 			if user.RoleID == nil {
-				m.logPermissionCheck(r.Context(), user.ID, fmt.Sprintf("role:%s", roleName), false, "no_role_assigned", time.Since(startTime))
+				m.logPermissionCheck(r.Context(), user.ID, fmt.Sprintf(rolePermissionFormat, roleName), false, "no_role_assigned", time.Since(startTime))
 				m.respondWithError(w, http.StatusForbidden, "No role assigned to user", roleName)
 				return
 			}
@@ -128,20 +136,20 @@ func (m *PermissionMiddleware) CheckRole(roleName string) func(http.Handler) htt
 			// Get user's role from role service
 			role, err := m.roleService.GetRoleByID(r.Context(), *user.RoleID)
 			if err != nil {
-				m.logPermissionCheck(r.Context(), user.ID, fmt.Sprintf("role:%s", roleName), false, fmt.Sprintf("check_error: %v", err), time.Since(startTime))
+				m.logPermissionCheck(r.Context(), user.ID, fmt.Sprintf(rolePermissionFormat, roleName), false, fmt.Sprintf(checkErrorFormat, err), time.Since(startTime))
 				m.respondWithError(w, http.StatusInternalServerError, "Failed to verify role", roleName)
 				return
 			}
 
 			hasRole := role != nil && strings.EqualFold(role.Name, roleName)
 			if !hasRole {
-				m.logPermissionCheck(r.Context(), user.ID, fmt.Sprintf("role:%s", roleName), false, "role_denied", time.Since(startTime))
-				m.respondWithError(w, http.StatusForbidden, 
+				m.logPermissionCheck(r.Context(), user.ID, fmt.Sprintf(rolePermissionFormat, roleName), false, "role_denied", time.Since(startTime))
+				m.respondWithError(w, http.StatusForbidden,
 					fmt.Sprintf("Access denied: requires '%s' role", roleName), roleName)
 				return
 			}
 
-			m.logPermissionCheck(r.Context(), user.ID, fmt.Sprintf("role:%s", roleName), true, "granted", time.Since(startTime))
+			m.logPermissionCheck(r.Context(), user.ID, fmt.Sprintf(rolePermissionFormat, roleName), true, "granted", time.Since(startTime))
 			next.ServeHTTP(w, r)
 		})
 	}
@@ -153,11 +161,11 @@ func (m *PermissionMiddleware) CheckOwnership(resourceType string, resourceIDExt
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			startTime := time.Now()
-			
+
 			user, err := GetUserFromContext(r.Context())
 			if err != nil || user == nil {
 				m.logPermissionCheck(r.Context(), "", fmt.Sprintf("ownership:%s", resourceType), false, "user_not_found", time.Since(startTime))
-				m.respondWithError(w, http.StatusUnauthorized, "Authentication required", resourceType)
+				m.respondWithError(w, http.StatusUnauthorized, authenticationRequiredMessage, resourceType)
 				return
 			}
 
@@ -172,23 +180,23 @@ func (m *PermissionMiddleware) CheckOwnership(resourceType string, resourceIDExt
 			// Check ownership
 			isOwner, err := m.checkResourceOwnership(r.Context(), user.ID, resourceType, resourceID)
 			if err != nil {
-				m.logPermissionCheck(r.Context(), user.ID, fmt.Sprintf("ownership:%s:%s", resourceType, resourceID), false, fmt.Sprintf("check_error: %v", err), time.Since(startTime))
+				m.logPermissionCheck(r.Context(), user.ID, fmt.Sprintf(ownershipPermissionFormat, resourceType, resourceID), false, fmt.Sprintf(checkErrorFormat, err), time.Since(startTime))
 				m.respondWithError(w, http.StatusInternalServerError, "Failed to verify ownership", resourceType)
 				return
 			}
 
 			if !isOwner {
-				m.logPermissionCheck(r.Context(), user.ID, fmt.Sprintf("ownership:%s:%s", resourceType, resourceID), false, "not_owner", time.Since(startTime))
-				m.respondWithError(w, http.StatusForbidden, 
+				m.logPermissionCheck(r.Context(), user.ID, fmt.Sprintf(ownershipPermissionFormat, resourceType, resourceID), false, "not_owner", time.Since(startTime))
+				m.respondWithError(w, http.StatusForbidden,
 					fmt.Sprintf("Access denied: you don't own this %s", resourceType), resourceType)
 				return
 			}
 
-			m.logPermissionCheck(r.Context(), user.ID, fmt.Sprintf("ownership:%s:%s", resourceType, resourceID), true, "owner", time.Since(startTime))
-			
+			m.logPermissionCheck(r.Context(), user.ID, fmt.Sprintf(ownershipPermissionFormat, resourceType, resourceID), true, "owner", time.Since(startTime))
+
 			// Add ownership info to context
-			ctx := context.WithValue(r.Context(), "resource_owner", true)
-			ctx = context.WithValue(ctx, "resource_id", resourceID)
+			ctx := context.WithValue(r.Context(), resourceOwnerContextKey, true)
+			ctx = context.WithValue(ctx, resourceIDContextKey, resourceID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
@@ -204,11 +212,11 @@ func (m *PermissionMiddleware) CheckPermissionOrOwnership(
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			startTime := time.Now()
-			
+
 			user, err := GetUserFromContext(r.Context())
 			if err != nil || user == nil {
 				m.logPermissionCheck(r.Context(), "", permissionName, false, "user_not_found", time.Since(startTime))
-				m.respondWithError(w, http.StatusUnauthorized, "Authentication required", permissionName)
+				m.respondWithError(w, http.StatusUnauthorized, authenticationRequiredMessage, permissionName)
 				return
 			}
 
@@ -220,33 +228,56 @@ func (m *PermissionMiddleware) CheckPermissionOrOwnership(
 				return
 			}
 
-			// If no permission, check ownership
-			resourceID := resourceIDExtractor(r)
-			if resourceID == "" {
-				m.logPermissionCheck(r.Context(), user.ID, permissionName, false, "resource_id_not_found", time.Since(startTime))
-				m.respondWithError(w, http.StatusBadRequest, "Resource ID not found", permissionName)
-				return
-			}
-
-			isOwner, err := m.checkResourceOwnership(r.Context(), user.ID, resourceType, resourceID)
-			if err != nil {
-				m.logPermissionCheck(r.Context(), user.ID, fmt.Sprintf("%s|ownership:%s", permissionName, resourceType), false, fmt.Sprintf("check_error: %v", err), time.Since(startTime))
-				m.respondWithError(w, http.StatusInternalServerError, "Failed to verify access", permissionName)
-				return
-			}
-
-			if !isOwner {
-				m.logPermissionCheck(r.Context(), user.ID, fmt.Sprintf("%s|ownership:%s", permissionName, resourceType), false, "access_denied", time.Since(startTime))
-				m.respondWithError(w, http.StatusForbidden, 
-					"Access denied: requires permission or resource ownership", permissionName)
-				return
-			}
-
-			m.logPermissionCheck(r.Context(), user.ID, fmt.Sprintf("%s|ownership:%s", permissionName, resourceType), true, "granted_by_ownership", time.Since(startTime))
-			ctx := context.WithValue(r.Context(), "resource_owner", true)
-			next.ServeHTTP(w, r.WithContext(ctx))
+			m.handleOwnershipAccess(w, r, next, ownershipAccessCheck{
+				permissionName:      permissionName,
+				resourceType:        resourceType,
+				resourceIDExtractor: resourceIDExtractor,
+				startTime:           startTime,
+				userID:              user.ID,
+			})
 		})
 	}
+}
+
+type ownershipAccessCheck struct {
+	permissionName      string
+	resourceType        string
+	resourceIDExtractor ResourceIDExtractor
+	startTime           time.Time
+	userID              string
+}
+
+func (m *PermissionMiddleware) handleOwnershipAccess(
+	w http.ResponseWriter,
+	r *http.Request,
+	next http.Handler,
+	check ownershipAccessCheck,
+) {
+	resourceID := check.resourceIDExtractor(r)
+	if resourceID == "" {
+		m.logPermissionCheck(r.Context(), check.userID, check.permissionName, false, "resource_id_not_found", time.Since(check.startTime))
+		m.respondWithError(w, http.StatusBadRequest, "Resource ID not found", check.permissionName)
+		return
+	}
+
+	permissionKey := fmt.Sprintf(permissionOwnershipFormat, check.permissionName, check.resourceType)
+	isOwner, err := m.checkResourceOwnership(r.Context(), check.userID, check.resourceType, resourceID)
+	if err != nil {
+		m.logPermissionCheck(r.Context(), check.userID, permissionKey, false, fmt.Sprintf(checkErrorFormat, err), time.Since(check.startTime))
+		m.respondWithError(w, http.StatusInternalServerError, "Failed to verify access", check.permissionName)
+		return
+	}
+
+	if !isOwner {
+		m.logPermissionCheck(r.Context(), check.userID, permissionKey, false, "access_denied", time.Since(check.startTime))
+		m.respondWithError(w, http.StatusForbidden,
+			"Access denied: requires permission or resource ownership", check.permissionName)
+		return
+	}
+
+	m.logPermissionCheck(r.Context(), check.userID, permissionKey, true, "granted_by_ownership", time.Since(check.startTime))
+	ctx := context.WithValue(r.Context(), resourceOwnerContextKey, true)
+	next.ServeHTTP(w, r.WithContext(ctx))
 }
 
 // CheckAllPermissions requires user to have ALL specified permissions (AND logic)
@@ -255,24 +286,24 @@ func (m *PermissionMiddleware) CheckAllPermissions(permissionNames ...string) fu
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			startTime := time.Now()
 			permissionsStr := strings.Join(permissionNames, " AND ")
-			
+
 			user, err := GetUserFromContext(r.Context())
 			if err != nil || user == nil {
 				m.logPermissionCheck(r.Context(), "", permissionsStr, false, "user_not_found", time.Since(startTime))
-				m.respondWithError(w, http.StatusUnauthorized, "Authentication required", permissionsStr)
+				m.respondWithError(w, http.StatusUnauthorized, authenticationRequiredMessage, permissionsStr)
 				return
 			}
 
 			hasAll, err := m.permissionService.HasPermissions(r.Context(), user.ID, permissionNames)
 			if err != nil {
-				m.logPermissionCheck(r.Context(), user.ID, permissionsStr, false, fmt.Sprintf("check_error: %v", err), time.Since(startTime))
+				m.logPermissionCheck(r.Context(), user.ID, permissionsStr, false, fmt.Sprintf(checkErrorFormat, err), time.Since(startTime))
 				m.respondWithError(w, http.StatusInternalServerError, "Failed to verify permissions", permissionsStr)
 				return
 			}
 
 			if !hasAll {
 				m.logPermissionCheck(r.Context(), user.ID, permissionsStr, false, "missing_permissions", time.Since(startTime))
-				m.respondWithError(w, http.StatusForbidden, 
+				m.respondWithError(w, http.StatusForbidden,
 					fmt.Sprintf("Permission denied: requires all of [%s]", strings.Join(permissionNames, ", ")), permissionsStr)
 				return
 			}
@@ -289,24 +320,24 @@ func (m *PermissionMiddleware) CheckAnyPermission(permissionNames ...string) fun
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			startTime := time.Now()
 			permissionsStr := strings.Join(permissionNames, " OR ")
-			
+
 			user, err := GetUserFromContext(r.Context())
 			if err != nil || user == nil {
 				m.logPermissionCheck(r.Context(), "", permissionsStr, false, "user_not_found", time.Since(startTime))
-				m.respondWithError(w, http.StatusUnauthorized, "Authentication required", permissionsStr)
+				m.respondWithError(w, http.StatusUnauthorized, authenticationRequiredMessage, permissionsStr)
 				return
 			}
 
 			hasAny, err := m.permissionService.HasAnyPermission(r.Context(), user.ID, permissionNames)
 			if err != nil {
-				m.logPermissionCheck(r.Context(), user.ID, permissionsStr, false, fmt.Sprintf("check_error: %v", err), time.Since(startTime))
+				m.logPermissionCheck(r.Context(), user.ID, permissionsStr, false, fmt.Sprintf(checkErrorFormat, err), time.Since(startTime))
 				m.respondWithError(w, http.StatusInternalServerError, "Failed to verify permissions", permissionsStr)
 				return
 			}
 
 			if !hasAny {
 				m.logPermissionCheck(r.Context(), user.ID, permissionsStr, false, "no_matching_permission", time.Since(startTime))
-				m.respondWithError(w, http.StatusForbidden, 
+				m.respondWithError(w, http.StatusForbidden,
 					fmt.Sprintf("Permission denied: requires one of [%s]", strings.Join(permissionNames, ", ")), permissionsStr)
 				return
 			}
@@ -324,24 +355,24 @@ func (m *PermissionMiddleware) CheckResourceAction(resource entity.ResourceType,
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			startTime := time.Now()
 			permissionName := fmt.Sprintf("%s:%s", resource, action)
-			
+
 			user, err := GetUserFromContext(r.Context())
 			if err != nil || user == nil {
 				m.logPermissionCheck(r.Context(), "", permissionName, false, "user_not_found", time.Since(startTime))
-				m.respondWithError(w, http.StatusUnauthorized, "Authentication required", permissionName)
+				m.respondWithError(w, http.StatusUnauthorized, authenticationRequiredMessage, permissionName)
 				return
 			}
 
 			canPerform, err := m.permissionService.CanUserPerformAction(r.Context(), user.ID, string(resource), string(action))
 			if err != nil {
-				m.logPermissionCheck(r.Context(), user.ID, permissionName, false, fmt.Sprintf("check_error: %v", err), time.Since(startTime))
+				m.logPermissionCheck(r.Context(), user.ID, permissionName, false, fmt.Sprintf(checkErrorFormat, err), time.Since(startTime))
 				m.respondWithError(w, http.StatusInternalServerError, "Failed to verify permission", permissionName)
 				return
 			}
 
 			if !canPerform {
 				m.logPermissionCheck(r.Context(), user.ID, permissionName, false, "action_denied", time.Since(startTime))
-				m.respondWithError(w, http.StatusForbidden, 
+				m.respondWithError(w, http.StatusForbidden,
 					fmt.Sprintf("Permission denied: cannot '%s' on '%s'", action, resource), permissionName)
 				return
 			}
@@ -382,9 +413,9 @@ type ResourceIDExtractor func(r *http.Request) string
 // checkResourceOwnership verifies if a user owns a specific resource
 // This is a placeholder - implement actual ownership logic based on your domain
 func (m *PermissionMiddleware) checkResourceOwnership(ctx context.Context, userID, resourceType, resourceID string) (bool, error) {
-	// TODO: Implement actual ownership checks based on resource type
+	// TODOs: Implement actual ownership checks based on resource type
 	// This should query the appropriate repository to verify ownership
-	
+
 	// Example implementation:
 	// switch resourceType {
 	// case "ebook":
@@ -394,7 +425,7 @@ func (m *PermissionMiddleware) checkResourceOwnership(ctx context.Context, userI
 	// default:
 	//     return false, fmt.Errorf("unknown resource type: %s", resourceType)
 	// }
-	
+
 	log.Printf("Ownership check not implemented for resource type: %s", resourceType)
 	return false, fmt.Errorf("ownership check not implemented for resource type: %s", resourceType)
 }
@@ -436,7 +467,9 @@ func (m *PermissionMiddleware) respondWithError(w http.ResponseWriter, statusCod
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Printf("failed to encode permission error response: %v", err)
+	}
 }
 
 // PermissionErrorResponse represents a permission error response
@@ -455,12 +488,12 @@ func GetPermissionsFromContext(ctx context.Context) ([]*entity.Permission, bool)
 
 // IsResourceOwner checks if the resource_owner flag is set in context
 func IsResourceOwner(ctx context.Context) bool {
-	owner, ok := ctx.Value("resource_owner").(bool)
+	owner, ok := ctx.Value(resourceOwnerContextKey).(bool)
 	return ok && owner
 }
 
 // GetResourceID retrieves the resource ID from context
 func GetResourceID(ctx context.Context) (string, bool) {
-	resourceID, ok := ctx.Value("resource_id").(string)
+	resourceID, ok := ctx.Value(resourceIDContextKey).(string)
 	return resourceID, ok
 }

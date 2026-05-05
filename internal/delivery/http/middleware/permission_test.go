@@ -11,11 +11,11 @@ import (
 
 // Mock PermissionService for testing
 type mockPermissionService struct {
-	hasPermissionFunc       func(ctx context.Context, userID, permissionName string) (bool, error)
-	hasPermissionsFunc      func(ctx context.Context, userID string, permissionNames []string) (bool, error)
-	hasAnyPermissionFunc    func(ctx context.Context, userID string, permissionNames []string) (bool, error)
+	hasPermissionFunc        func(ctx context.Context, userID, permissionName string) (bool, error)
+	hasPermissionsFunc       func(ctx context.Context, userID string, permissionNames []string) (bool, error)
+	hasAnyPermissionFunc     func(ctx context.Context, userID string, permissionNames []string) (bool, error)
 	canUserPerformActionFunc func(ctx context.Context, userID, resource, action string) (bool, error)
-	getUserPermissionsFunc  func(ctx context.Context, userID string) ([]*entity.Permission, error)
+	getUserPermissionsFunc   func(ctx context.Context, userID string) ([]*entity.Permission, error)
 }
 
 func (m *mockPermissionService) HasPermission(ctx context.Context, userID, permissionName string) (bool, error) {
@@ -308,11 +308,13 @@ func TestCheckPermission_Success(t *testing.T) {
 
 	handler := middleware.CheckPermission(entity.PermissionCategoryCreate)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("success"))
+		if _, err := w.Write([]byte("success")); err != nil {
+			t.Errorf("failed to write response: %v", err)
+		}
 	}))
 
 	req := httptest.NewRequest("POST", "/categories/create", nil)
-	
+
 	// Add user to context
 	user := &entity.User{ID: "user-123", Email: "test@example.com"}
 	ctx := context.WithValue(req.Context(), UserContextKey, user)
@@ -346,7 +348,7 @@ func TestCheckPermission_Denied(t *testing.T) {
 	}))
 
 	req := httptest.NewRequest("POST", "/categories/create", nil)
-	
+
 	user := &entity.User{ID: "user-123", Email: "test@example.com"}
 	ctx := context.WithValue(req.Context(), UserContextKey, user)
 	req = req.WithContext(ctx)
@@ -402,11 +404,13 @@ func TestCheckRole_Success(t *testing.T) {
 
 	handler := middleware.CheckRole("admin")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("success"))
+		if _, err := w.Write([]byte("success")); err != nil {
+			t.Errorf("failed to write response: %v", err)
+		}
 	}))
 
 	req := httptest.NewRequest("GET", "/admin/dashboard", nil)
-	
+
 	user := &entity.User{ID: "user-123", Email: "admin@example.com", RoleID: &roleID}
 	ctx := context.WithValue(req.Context(), UserContextKey, user)
 	req = req.WithContext(ctx)
@@ -438,7 +442,7 @@ func TestCheckAllPermissions_Success(t *testing.T) {
 	}))
 
 	req := httptest.NewRequest("POST", "/categories/advanced", nil)
-	
+
 	user := &entity.User{ID: "user-123", Email: "test@example.com"}
 	ctx := context.WithValue(req.Context(), UserContextKey, user)
 	req = req.WithContext(ctx)
@@ -470,7 +474,7 @@ func TestCheckAnyPermission_Success(t *testing.T) {
 	}))
 
 	req := httptest.NewRequest("POST", "/categories/flexible", nil)
-	
+
 	user := &entity.User{ID: "user-123", Email: "test@example.com"}
 	ctx := context.WithValue(req.Context(), UserContextKey, user)
 	req = req.WithContext(ctx)
@@ -502,7 +506,7 @@ func TestCheckResourceAction_Success(t *testing.T) {
 	}))
 
 	req := httptest.NewRequest("POST", "/categories", nil)
-	
+
 	user := &entity.User{ID: "user-123", Email: "test@example.com"}
 	ctx := context.WithValue(req.Context(), UserContextKey, user)
 	req = req.WithContext(ctx)
@@ -543,7 +547,7 @@ func TestInjectPermissions(t *testing.T) {
 	}))
 
 	req := httptest.NewRequest("GET", "/test", nil)
-	
+
 	user := &entity.User{ID: "user-123", Email: "test@example.com"}
 	ctx := context.WithValue(req.Context(), UserContextKey, user)
 	req = req.WithContext(ctx)
@@ -580,7 +584,7 @@ func TestAuditLogger(t *testing.T) {
 	}))
 
 	req := httptest.NewRequest("POST", "/categories", nil)
-	
+
 	user := &entity.User{ID: "user-123", Email: "test@example.com"}
 	ctx := context.WithValue(req.Context(), UserContextKey, user)
 	req = req.WithContext(ctx)

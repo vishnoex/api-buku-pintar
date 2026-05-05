@@ -172,10 +172,7 @@ func (h *AuthHandler) verifyEmailWithTokens(w http.ResponseWriter, r *http.Reque
 		Verified: true,
 		User:     user,
 		Roles:    roles,
-		Session: AuthSessionResponse{
-			AccessToken:  req.AccessToken,
-			RefreshToken: req.RefreshToken,
-		},
+		Session:  AuthSessionResponse(req),
 	}, "email verified successfully")
 }
 

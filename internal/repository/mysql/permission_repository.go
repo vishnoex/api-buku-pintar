@@ -441,7 +441,12 @@ func (r *permissionRepository) CreateBulk(ctx context.Context, permissions []*en
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback()
+		}
+	}()
 
 	query := `INSERT INTO permissions (id, name, description, resource, action, created_at) 
 		VALUES (?, ?, ?, ?, ?, ?)`
@@ -466,7 +471,11 @@ func (r *permissionRepository) CreateBulk(ctx context.Context, permissions []*en
 		}
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	committed = true
+	return nil
 }
 
 // GetByNames retrieves multiple permissions by their names

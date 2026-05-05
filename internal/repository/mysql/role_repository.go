@@ -254,7 +254,12 @@ func (r *roleRepository) AssignPermissionsToRole(ctx context.Context, roleID str
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback()
+		}
+	}()
 
 	query := `INSERT INTO role_permissions (role_id, permission_id) VALUES (?, ?)
 		ON DUPLICATE KEY UPDATE role_id = role_id`
@@ -272,7 +277,11 @@ func (r *roleRepository) AssignPermissionsToRole(ctx context.Context, roleID str
 		}
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+	committed = true
+	return nil
 }
 
 // RemoveAllPermissionsFromRole removes all permissions from a role
